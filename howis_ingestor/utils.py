@@ -1,14 +1,13 @@
-"""A sample module."""
+from loguru import logger
+from ftplib import FTP
+from xml.etree import ElementTree as ET
 
-import log
+
+FILE_KONTAKTE = "ev_kontakte.xml"
+FILE_PEGELDATEN = "ev_pegeldaten.xml"
+FILE_PEGELSTAMM = "ev_pegelstamm.xml"
 
 
-def feet_to_meters(feet):
-    """Convert feet to meters."""
-    try:
-        value = float(feet)
-    except ValueError:
-        log.error("Unable to convert to float: %s", feet)
-        return None
-    else:
-        return (0.3048 * value * 10000.0 + 0.5) / 10000.0
+def list_content(ftp: FTP):
+    logger.debug(ftp.retrlines('LIST'))
+    

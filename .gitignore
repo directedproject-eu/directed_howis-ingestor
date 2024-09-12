@@ -49,3 +49,5 @@ coverage.xml
 
 # Eclipse
 .settings
+
+staging/*.json
