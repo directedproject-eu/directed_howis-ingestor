@@ -53,15 +53,7 @@ pytest = "^8.1"
 pytest-describe = "^2.0"
 pytest-expecter = "^3.0"
 pytest-random = "*"
-pytest-cov = "^4.1"
 freezegun = "*"
-
-# Reports
-coveragespace = "^6.1"
-
-# Documentation
-mkdocs = "~1.3"
-pygments = "^2.11.1"
 
 # Tooling
 pyinstaller = "*"
@@ -96,11 +88,6 @@ addopts = """
 --strict-markers
 
 -r sxX
---show-capture=log
-
---cov-report=html
---cov-report=term-missing:skip-covered
---no-cov-on-fail
 """
 
 cache_dir = ".cache/pytest/"

@@ -17,7 +17,7 @@ This project was generated with [cookiecutter](https://github.com/audreyr/cookie
 
 ### Requirements
 
-* Python 3.11+
+-   Python 3.11+
 
 ### Installation
 
@@ -27,7 +27,7 @@ Install it directly into an activated virtual environment:
 $ pip install directed_howis-ingestor
 ```
 
-or add it to your [Poetry](https://poetry.eustace.io/) project:
+or add it to your [Poetry](https://python-poetry.org/) project:
 
 ```text
 $ poetry add directed_howis-ingestor
