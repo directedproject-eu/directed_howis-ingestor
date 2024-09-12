@@ -1,15 +1,18 @@
 import os
 import uuid
 import json
+from pathlib import Path
+from os.path import join
 from typing import List
 
 from loguru import logger
 from howis_ingestor.parser import Pegelstamm, Kontakt
 
+def _resolve(local_path):
+    return str(join(Path(__file__).parent, local_path))
 
-STAGING_SYSTEM = "./staging/%s_system.json"
-STAGING_DATASTREAM = "./staging/%s_datastream.json"
-
+STAGING_SYSTEM = _resolve("./staging/%s_system.json")
+STAGING_DATASTREAM = _resolve("./staging/%s_datastream.json")
 
 def stage_systems(kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []):
     try:

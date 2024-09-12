@@ -29,9 +29,11 @@ def main(username: str, password: str, ftp_url: str, encoding: str):
         logger.error("HOWIS_FTP_PASSWORD is not set! Use -w flag for password prompt.")
         exit(1)
     
-    logger.info(f"Ingest latest data from '{ftp_url}'")
+    ftp = None
+    logger.info(f"Get latest data ..")
     
     try:
+        logger.info(f"Establish connection with user '{username}' to '{ftp_url}'")
         ftp = FTP(ftp_url, encoding=encoding)
         ftp.login(user=username, passwd=password)
     
@@ -43,10 +45,10 @@ def main(username: str, password: str, ftp_url: str, encoding: str):
         csa_staging.stage_systems(kontakt, pegelstamm)
         
     except Exception as e:
-        logger.error("Failed to parse content!")
-        raise e
+        logger.error(f"Failed to ingest data: {e}")
+        exit(-1)
     finally:
-        if ftp:
+        if ftp is not None:
             logger.debug("Closing FTP connection.")
             ftp.close()
     
