@@ -13,7 +13,6 @@
             "args": [
                 "--username=directed",
                 "--destination=http://localhost:5000",
-                "--stage-dir=${workspaceFolder}/staging",
                 "ftp.erftverband.de"
             ],
             "console": "integratedTerminal"
