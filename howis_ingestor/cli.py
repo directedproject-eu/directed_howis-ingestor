@@ -6,7 +6,7 @@ from ftplib import FTP
 import click
 from loguru import logger
 
-from howis_ingestor import utils, parser
+from howis_ingestor import parser
 from howis_ingestor.stager import Stager
 
 
@@ -55,8 +55,8 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         logger.info(f"Establish connection with user '{username}' to '{ftp_url}'")
         ftp = FTP(ftp_url, encoding=encoding)
         ftp.login(user=username, passwd=password)
-    
-        utils.list_content(ftp)
+        ftp.dir()  # print remote dir content
+        
         kontakt = parser.parse_kontakt(ftp)
         pegelstamm = parser.parse_pegelstamm(ftp)
         pegeldaten = parser.parse_pegeldaten(ftp)
