@@ -56,43 +56,35 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         Path(default_stage_dir).mkdir( exist_ok=True)
     logger.info(f"Using stage_dir at '{stage_dir}'.")
     
-    
-    ftp = None
-    logger.info(f"Get latest data ..")
-    
-    try:
-        logger.info(f"Establish connection with user '{username}' to '{ftp_url}'")
-        ftp = FTP(ftp_url, encoding=encoding)
-        ftp.login(user=username, passwd=password)
-        ftp.dir()  # print remote dir content
-        
-        kontakt = parser.parse_kontakt(ftp)
-        pegelstamm = parser.parse_pegelstamm(ftp)
-        pegeldaten = parser.parse_pegeldaten(ftp)
-        
-        csa_base_url = destination.slice[-1] if destination.endswith("/") else destination
-        stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
-        staged_systems = stager.stage_systems(kontakt, pegelstamm)
-        staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
-        staged_observations = stager.stage_observations(pegeldaten)
-        
-        ingestor = Ingestor(stage_dir, csa_base_url)
-        if not dry_run:
-            ingestor.ingest_systems(staged_systems)
-            ingestor.ingest_datastreams(staged_datastreams)
-            ingestor.ingest_observations(staged_observations)
-        else:
-            logger.warning("Skipping ingestion as if enabled dry-run.")
-        
-    except Exception as e:
-        logger.error(f"Failed to ingest data: {e}")
-        # if logger.level == "DEBUG":
-        #     logger.exception(e)
-        raise e
-    finally:
-        if ftp is not None:
-            logger.debug("Closing FTP connection.")
-            ftp.close()
+    logger.info(f"Establish connection with user '{username}' to '{ftp_url}'")
+    with FTP(ftp_url, encoding=encoding) as ftp:
+        try:
+            ftp.login(user=username, passwd=password)
+            ftp.dir()  # print remote dir content
+            
+            kontakt = parser.parse_kontakt(ftp)
+            pegelstamm = parser.parse_pegelstamm(ftp)
+            pegeldaten = parser.parse_pegeldaten(ftp)
+            
+            csa_base_url = destination.slice[-1] if destination.endswith("/") else destination
+            stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
+            staged_systems = stager.stage_systems(kontakt, pegelstamm)
+            staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
+            staged_observations = stager.stage_observations(pegeldaten)
+            
+            ingestor = Ingestor(stage_dir, csa_base_url)
+            if not dry_run:
+                ingestor.ingest_systems(staged_systems)
+                ingestor.ingest_datastreams(staged_datastreams)
+                ingestor.ingest_observations(staged_observations)
+            else:
+                logger.warning("Skipping ingestion as if enabled dry-run.")
+            
+        except Exception as e:
+            logger.error(f"Failed to ingest data: {e}")
+            # if logger.level == "DEBUG":
+            #     logger.exception(e)
+            raise e
     
     logger.info("done!")
 
