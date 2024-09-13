@@ -907,6 +907,17 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-jsonpath"
+version = "1.2.0"
+description = "JSONPath, JSON Pointer and JSON Patch for Python."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "python_jsonpath-1.2.0-py3-none-any.whl", hash = "sha256:3172c7b87098fced1ed84bd3492bd1a19ef1ad41d4f5b8a3e9a147c750ac08b3"},
+    {file = "python_jsonpath-1.2.0.tar.gz", hash = "sha256:a29a84ec3ac38e5dcaa62ac2a215de72c4eb60cb1303e10700da980cf7873775"},
+]
+
+[[package]]
 name = "python-termstyle"
 version = "0.1.10"
 description = "console colouring for python"
@@ -1188,4 +1199,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "9f03b99c9c215b87dc07a446778285028793ebebe49dd741b93f860840e31124"
+content-hash = "e835475641afab14fa073af89373e290f70b7181e89455c5afb64f02a16acca2"

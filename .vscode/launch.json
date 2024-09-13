@@ -10,7 +10,12 @@
             "request": "launch",
             "program": "cli.py",
             "cwd": "${workspaceFolder}/howis_ingestor",
-            "args": ["--username=directed", "ftp.erftverband.de"],
+            "args": [
+                "--username=directed",
+                "--destination=http://localhost:5000",
+                "--stage-dir=${workspaceFolder}/staging",
+                "ftp.erftverband.de"
+            ],
             "console": "integratedTerminal"
         }
     ]

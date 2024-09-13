@@ -1,4 +1,6 @@
-from datetime import date, datetime
+from typing import List
+from datetime import datetime
+from collections.abc import  Mapping
 
 from loguru import logger
 from ftplib import FTP
@@ -40,7 +42,7 @@ def parse_kontakt(ftp: FTP):
         #     elem.iter("disclaimer")
     return Kontakt(**kontakt)
 
-def parse_pegelstamm(ftp: FTP) -> list:
+def parse_pegelstamm(ftp: FTP) -> List[Pegelstamm]:
     parser = ET.XMLPullParser(['start', 'end'])
     ftp.retrlines(f"RETR {FILE_PEGELSTAMM}", parser.feed)
     
@@ -77,7 +79,7 @@ def parse_pegelstamm(ftp: FTP) -> list:
     return pegelstamm
 
 
-def parse_pegeldaten(ftp: FTP) -> dict:
+def parse_pegeldaten(ftp: FTP) -> Mapping[str, Pegeldaten]:
     parser = ET.XMLPullParser(['start', 'end'])
     ftp.retrbinary(f"RETR {FILE_PEGELDATEN}", parser.feed)
     
