@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 from os.path import join
 from ftplib import FTP
 
@@ -47,6 +48,13 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
     if not password:
         logger.error("HOWIS_FTP_PASSWORD is not set! Use -w flag for password prompt.")
         exit(1)
+        
+    if stage_dir == default_stage_dir:
+        if not os.path.exists(default_stage_dir):
+            logger.debug(f"Creating default stage_dir at '{default_stage_dir}'")
+        Path(default_stage_dir).mkdir( exist_ok=True)
+    logger.info(f"Using stage_dir at '{stage_dir}'.")
+    
     
     ftp = None
     logger.info(f"Get latest data ..")
