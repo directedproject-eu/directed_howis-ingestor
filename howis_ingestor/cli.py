@@ -9,6 +9,7 @@ from loguru import logger
 
 from howis_ingestor import parser
 from howis_ingestor.stager import Stager
+from howis_ingestor.ingester import Ingestor
 
 
 default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
@@ -31,7 +32,7 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
               help="Directory containing CSA data to be ingested.")
 @click.option("--dry-run",
               "dry_run",
-              default=False,
+              is_flag=True,
               help="Connect and parse HOWIS data but skips CSA ingestion.")
 @click.option("-e",
               "--encoding",
@@ -74,6 +75,14 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         staged_systems = stager.stage_systems(kontakt, pegelstamm)
         staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
         staged_observations = stager.stage_observations(pegeldaten)
+        
+        ingestor = Ingestor(stage_dir, csa_base_url)
+        if not dry_run:
+            ingestor.ingest_systems(staged_systems)
+            ingestor.ingest_datastreams(staged_datastreams)
+            ingestor.ingest_observations(staged_observations)
+        else:
+            logger.warning("Skipping ingestion as if enabled dry-run.")
         
     except Exception as e:
         logger.error(f"Failed to ingest data: {e}")
