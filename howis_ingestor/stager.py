@@ -22,14 +22,14 @@ STAGING_OBSERVATIONS = "%s_observations.csv"
 
 class Stager:
     
-    def __init__(self, staging_dir: str, csa_base_url: str):
-        if not os.path.exists(staging_dir):
-            raise Exception(f"Staging directory does not exist")
-        self.staging_dir = staging_dir
+    def __init__(self, stage_dir: str, csa_base_url: str):
+        if not os.path.exists(stage_dir):
+            raise Exception(f"Stage directory does not exist")
+        self.stage_dir = stage_dir
         self.csa_base_url = csa_base_url
 
     def _resolve(self, filename, pgnr):
-        return str(os.path.join(self.staging_dir, filename % pgnr))
+        return str(os.path.join(self.stage_dir, filename % pgnr))
 
     def stage_systems(self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []) -> List[str]:
         staged_systems = []
