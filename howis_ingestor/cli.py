@@ -68,7 +68,9 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         
     except Exception as e:
         logger.error(f"Failed to ingest data: {e}")
-        exit(-1)
+        # if logger.level == "DEBUG":
+        #     logger.exception(e)
+        raise e
     finally:
         if ftp is not None:
             logger.debug("Closing FTP connection.")
