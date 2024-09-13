@@ -35,11 +35,6 @@ class Stager:
         staged_systems = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
-            stage_file = self._resolve(STAGING_SYSTEM, pgnr)
-            if os.path.exists(stage_file):
-                # TODO do we have to update validTime manually?
-                continue
-
             stub = {
                 "id": str(uuid.uuid4()),
                 "type": "PhysicalSystem",
@@ -93,6 +88,7 @@ class Stager:
                 },
             }
             
+            stage_file = self._resolve(STAGING_SYSTEM, pgnr)
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
                 
