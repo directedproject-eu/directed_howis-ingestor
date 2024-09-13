@@ -96,8 +96,8 @@ class Stager:
         return staged_systems
 
 
-    def _resolve_system_id(self, pgnr: str):
-        with open(self._resolve(STAGING_SYSTEM, pgnr)) as system:
+    def _resolve_id(self, json_file, pgnr: str):
+        with open(self._resolve(json_file, pgnr)) as system:
             return jsonpath.findall("$.id", system)[0] or None
 
 
@@ -109,7 +109,7 @@ class Stager:
         
         staged_datastreams = []
         for pgnr, daten in pegeldaten.items():
-            system_id = self._resolve_system_id(pgnr)
+            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
