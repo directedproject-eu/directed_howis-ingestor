@@ -17,6 +17,7 @@ from howis_ingestor.parser import Kontakt, Pegelstamm, Pegeldaten
 
 STAGING_SYSTEM = "%s_system.json"
 STAGING_DATASTREAM = "%s_datastream.json"
+STAGING_OBSERVATION = "%s_observation.json"
 STAGING_OBSERVATIONS = "%s_observations.csv"
 
 
@@ -148,6 +149,17 @@ class Stager:
             staged_datastreams.append(staged_file)
         
         return staged_datastreams
+    
+    def _append_to_csv(self, pgnr, datastream_id, zeit, wert, einheit):
+        staged_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
+        is_new_file = not os.path.exists(staged_file)
+        with open(staged_file, "a") as csvfile:
+            writer = csv.writer(csvfile, lineterminator="\n")
+            if is_new_file:
+                writer.writerow(["zeit", "wert", "einheit", "datastream"])
+            writer.writerow([zeit, wert, einheit, datastream_id])
+        return csvfile
+    
 
     def stage_observations(self, pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[str]:
         staged_observations = []
@@ -156,13 +168,20 @@ class Stager:
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
             
-            staged_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
-            is_new_file = not os.path.exists(staged_file)
-            with open(staged_file, "a") as csvfile:
-                writer = csv.writer(csvfile, lineterminator="\n")
-                if is_new_file:
-                    writer.writerow(["zeit", "wert", "einheit"])
-                writer.writerow([zeit, wert, einheit])
+            datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
+            csv_file = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
+            stub = {
+                "id": str(uuid.uuid4()),
+                "datastream@id": datastream_id,
+                "resultTime": zeit,
+                "result": wert
+                # TODO einheit?!
+            }
+            
+            staged_file = self._resolve(STAGING_OBSERVATION, pgnr)
+            with open(staged_file, "w") as observation:
+                observation.write(json.dumps(stub, indent=2))
+            
             staged_observations.append(staged_file)
             
         return staged_observations
