@@ -7,7 +7,7 @@ import click
 from loguru import logger
 
 from howis_ingestor import utils, parser
-from howis_ingestor.csa_staging import Stager
+from howis_ingestor.stager import Stager
 
 
 default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
