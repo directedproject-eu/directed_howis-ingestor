@@ -21,6 +21,11 @@ STAGING_OBSERVATION = "%s_observation.json"
 STAGING_OBSERVATIONS = "%s_observations.csv"
 
 
+class Resource:
+    def __init__(self, file: str, parent_id: str):
+        self.file = file
+        self.parent_id = parent_id
+
 class Stager:
     
     def __init__(self, stage_dir: str, csa_base_url: str):
@@ -32,12 +37,13 @@ class Stager:
     def _resolve(self, filename, pgnr):
         return str(os.path.join(self.stage_dir, filename % pgnr))
 
-    def stage_systems(self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []) -> List[str]:
+    def stage_systems(self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
         staged_systems = []
         for pegel in pegelstamm:
+            system_id = str(uuid.uuid4())
             pgnr = getattr(pegel, "pgnr")
             stub = {
-                "id": str(uuid.uuid4()),
+                "id": system_id,
                 "type": "PhysicalSystem",
                 "definition": "http://www.w3.org/ns/sosa/Sensor",
                 "uniqueId": getattr(pegel, "pegelseite-url"),
@@ -93,7 +99,7 @@ class Stager:
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
                 
-            staged_systems.append(stage_file)
+            staged_systems.append(Resource(stage_file, None))
         return staged_systems
 
 
@@ -102,7 +108,7 @@ class Stager:
             return jsonpath.findall("$.id", system)[0] or None
 
 
-    def stage_datastreams(self, pegelstamm: List[Pegelstamm] = [], pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[str]:
+    def stage_datastreams(self, pegelstamm: List[Pegelstamm] = [], pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[Resource]:
         def _assign(acc, value):
             acc[getattr(value, "pgnr")] = value
             return acc
@@ -112,10 +118,11 @@ class Stager:
         for pgnr, daten in pegeldaten.items():
             system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
             pegel = pgnr_to_pegelstamm[pgnr]
+            datastream_id = str(uuid.uuid4())
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
             stub = {
-                "id": str(uuid.uuid4()),
+                "id": datastream_id,
                 "name": f"Water level for {pegelname} ({gewaesser})",
                 "formats": [ "application/json" ],
                 "system@link": {
@@ -146,7 +153,7 @@ class Stager:
             with open(staged_file, "w") as datastream:
                 datastream.write(json.dumps(stub, indent=2))
 
-            staged_datastreams.append(staged_file)
+            staged_datastreams.append(Resource(staged_file, system_id))
         
         return staged_datastreams
     
@@ -161,10 +168,10 @@ class Stager:
         return csvfile
     
 
-    def stage_observations(self, pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[str]:
+    def stage_observations(self, pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[Resource]:
         staged_observations = []
         for pgnr, daten in pegeldaten.items():
-            wert = str(getattr(daten, "wert"))
+            wert = getattr(daten, "wert")
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
             
@@ -182,6 +189,6 @@ class Stager:
             with open(staged_file, "w") as observation:
                 observation.write(json.dumps(stub, indent=2))
             
-            staged_observations.append(staged_file)
+            staged_observations.append(Resource(staged_file, datastream_id))
             
         return staged_observations
