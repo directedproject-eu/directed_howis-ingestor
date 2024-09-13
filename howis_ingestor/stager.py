@@ -26,7 +26,7 @@ class Stager:
         if not os.path.exists(staging_dir):
             raise Exception(f"Staging directory does not exist")
         self.staging_dir = staging_dir
-        self.csa_base_url = csa_base_url.slice[-1] if csa_base_url.endswith("/") else csa_base_url
+        self.csa_base_url = csa_base_url
 
     def _resolve(self, filename, pgnr):
         return str(os.path.join(self.staging_dir, filename % pgnr))

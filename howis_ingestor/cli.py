@@ -61,7 +61,8 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         pegelstamm = parser.parse_pegelstamm(ftp)
         pegeldaten = parser.parse_pegeldaten(ftp)
         
-        stager = Stager(staging_dir=stage_dir, csa_base_url=destination)
+        csa_base_url = destination.slice[-1] if destination.endswith("/") else destination
+        stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
         staged_systems = stager.stage_systems(kontakt, pegelstamm)
         staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
         staged_observations = stager.stage_observations(pegeldaten)
