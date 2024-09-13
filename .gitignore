@@ -50,7 +50,4 @@ coverage.xml
 # Eclipse
 .settings
 
-!staging/.gitkeep
-staging/*.json
-staging/*.csv
 ev_*.xml
