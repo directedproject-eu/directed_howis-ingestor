@@ -1,0 +1,73 @@
+{
+    "$schema": "https://raw.githubusercontent.com/opengeospatial/ogcapi-connected-systems/master/api/part2/openapi/schemas/json/dataStream.json",
+    "id": "c7c78460-e5a7-4b56-bb28-00317213cd1b",
+    "name": "Indoor Thermometer 001 - Living Room Temperature",
+    "description": "Indoor temperature measured on the south wall of the living room at 1.5m above the floor",
+    "ultimateFeatureOfInterest@link": {
+        "href": "https://data.example.org/api/collections/buildings/items/754",
+        "title": "My House"
+    },
+    "samplingFeature@link": {
+        "href": "https://data.example.org/api/samplingFeatures/4478",
+        "title": "Thermometer Sampling Point"
+    },
+    "system@link": {
+        "href": "http://localhost:5000/systems/2ea5beb0-2047-4bf7-bd75-6ae0938deef5",
+        "title": "urn:x-ogc:systems:001"
+    },
+    "observedProperties": [
+        {
+            "definition": "http://vocab.nerc.ac.uk/collection/P01/current/EWDAZZ01/",
+            "label": "WindDirFrom",
+            "description": "Direction relative to true north from which the wind is blowing"
+        }
+    ],
+    "phenomenonTime": [
+        "2000-08-05T12:36:56.760657+00:00",
+        "2099-08-05T12:36:56.760657+00:00"
+    ],
+    "resultTime": [
+        "2002-08-05T12:36:56.760657+00:00",
+        "2099-08-05T12:36:56.760657+00:00"
+    ],
+    "resultType": "measure",
+    "live": false,
+    "formats": ["application/json"],
+    "schema": {
+        "obsFormat": "application/om+json",
+        "resultTimeSchema": {
+            "name": "time",
+            "type": "Time",
+            "definition": "http://www.opengis.net/def/property/OGC/0/SamplingTime",
+            "referenceFrame": "http://www.opengis.net/def/trs/BIPM/0/UTC",
+            "label": "Sampling Time",
+            "uom": {
+                "href": "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+            }
+        },
+        "resultSchema": {
+            "name": "temp",
+            "type": "Quantity",
+            "definition": "http://mmisw.org/ont/cf/parameter/air_temperature",
+            "label": "Room Temperature",
+            "description": "Ambient air temperature measured inside the room",
+            "uom": {
+                "code": "Cel"
+            },
+            "nilValues": [
+                {
+                    "reason": "http://www.opengis.net/def/nil/OGC/0/missing",
+                    "value": "NaN"
+                },
+                {
+                    "reason": "http://www.opengis.net/def/nil/OGC/0/BelowDetectionRange",
+                    "value": "-Infinity"
+                },
+                {
+                    "reason": "http://www.opengis.net/def/nil/OGC/0/AboveDetectionRange",
+                    "value": "+Infinity"
+                }
+            ]
+        }
+    }
+}

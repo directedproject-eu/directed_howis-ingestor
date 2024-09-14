@@ -1,0 +1,33 @@
+{
+    "$schema": "https://raw.githubusercontent.com/opengeospatial/ogcapi-connected-systems/master/api/part1/openapi/schemas/sensorml/system.json",
+    "id": "2ea5beb0-2047-4bf7-bd75-6ae0938deef5",
+    "type": "PhysicalSystem",
+    "definition": "http://www.w3.org/ns/sosa/Sensor",
+    "uniqueId": "urn:x-ogc:systems:001",
+    "label": "Pegel_Schoenau",
+    "description": "Pegelsensor @ Schoenau",
+    "typeOf": {
+        "href": "https://data.example.org/api/procedures/TP60S?f=sml",
+        "uid": "urn:x-myorg:datasheets:GaugeSensor:xyz:v001",
+        "title": "Water Level Sensor 000",
+        "type": "application/sml+json"
+    },
+    "identifiers": [
+        {
+            "definition": "http://sensorml.com/ont/swe/property/SerialNumber",
+            "label": "Serial Number",
+            "value": "0123456879"
+        }
+    ],
+    "contacts": [
+        {
+            "role": "http://sensorml.com/ont/swe/roles/Operator",
+            "organisationName": "Erftverband, Bergheim"
+        }
+    ],
+    "validTime": ["2019-08-24T14:15:22Z", "2025-08-24T14:15:22Z"],
+    "position": {
+        "type": "Point",
+        "coordinates": [50.513336, 6.778831]
+    }
+}

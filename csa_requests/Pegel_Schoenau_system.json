@@ -1,0 +1,47 @@
+{
+  "id": "58a46255-9336-431e-b24e-fa3eb2907e88",
+  "type": "PhysicalSystem",
+  "definition": "http://www.w3.org/ns/sosa/Sensor",
+  "uniqueId": "https://www.erftverband.de/mapserver/arcshp/flussgebiet/klima_abfluss/howis/html/pegel/Pegel_Schoenau_zr.html",
+  "description": "HOWIS Pegel",
+  "label": "Schoenau",
+  "identifiers": [
+    {
+      "label": "Pegelnummer",
+      "value": "Pegel_Schoenau"
+    },
+    {
+      "label": "Pegelname",
+      "value": "Schoenau"
+    },
+    {
+      "label": "Pegelgruppe",
+      "value": "Erft"
+    },
+    {
+      "label": "Pegelseite",
+      "value": "https://www.erftverband.de/mapserver/arcshp/flussgebiet/klima_abfluss/howis/html/pegel/Pegel_Schoenau_zr.html"
+    }
+  ],
+  "contacts": [
+    {
+      "role": "Bereitsteller",
+      "individualName": "Erftverband",
+      "organisationName": "Erftverband, Bergheim"
+    },
+    {
+      "role": "Technischer Kontakt",
+      "name": "Tilo Keller",
+      "link": "tilo.keller@erftverband.de",
+      "phone": "+492271 881297",
+      "address": {
+        "electronicMailAddress": "tilo.keller@erftverband.de"
+      }
+    }
+  ],
+  "featuresOfInterest": {
+    "title": "Erft",
+    "href": "https://en.wikipedia.org/wiki/Erft",
+    "type": "gewaesser"
+  }
+}

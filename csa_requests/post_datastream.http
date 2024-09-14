@@ -1,0 +1,6 @@
+POST /systems/2ea5beb0-2047-4bf7-bd75-6ae0938deef5/datastreams HTTP/1.1
+Content-Type: application/json
+Host: localhost:5000
+User-Agent: HTTPie
+
+< ./datastream.json
