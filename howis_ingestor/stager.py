@@ -44,7 +44,7 @@ class Stager:
             pgnr = getattr(pegel, "pgnr")
             stub = {
                 "id": system_id,
-                "type": "PhysicalSystem",
+                "type": "SimpleProcess",
                 "definition": "http://www.w3.org/ns/sosa/Sensor",
                 "uniqueId": getattr(pegel, "pegelseite-url"),
                 "description": "HOWIS Pegel",
@@ -74,25 +74,33 @@ class Stager:
                     {
                         # provide role via parser
                         "role": "Bereitsteller",
-                        "individualName": getattr(kontakt, "name-public"),
+                        "title": "Organization",
                         "organisationName": getattr(kontakt, "organisation-public"),
+                        "address": {
+                            "electronicMailAddress": getattr(kontakt, "email-public")
+                        },
                     },
                     {
                         # provide role via parser
                         "role": "Technischer Kontakt",
-                        "name": getattr(kontakt, "name-techn"),
-                        "link": getattr(kontakt, "email-techn"),
-                        "phone": getattr(kontakt, "telefon-techn"),
+                        "title": "Individual",
+                        "individualName": getattr(kontakt, "name-techn"),
                         "address": {
-                            "electronicMailAddress": getattr(kontakt, "email-techn")
-                        }
+                            "electronicMailAddress": getattr(kontakt, "email-techn"),
+                        },
+                        "phone": {
+                            "voice": getattr(kontakt, "telefon-techn")
+                        },
+                        
                     }
                 ],
-                "featuresOfInterest": {
-                    "title": getattr(pegel, "gewaesser"),
-                    "href": "https://en.wikipedia.org/wiki/Erft",
-                    "type": "gewaesser"
-                },
+                "featuresOfInterest": [
+                    {
+                        "title": getattr(pegel, "gewaesser"),
+                        "href": "https://en.wikipedia.org/wiki/Erft",
+                        "type": "gewaesser"
+                    }
+                ],
             }
             
             stage_file = self._resolve(STAGING_SYSTEM, pgnr)
