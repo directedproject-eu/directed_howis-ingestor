@@ -22,7 +22,7 @@ class Ingestor:
                 endpoint_url = url % resource.parent_id if resource.parent_id else url
                 response = requests.post(endpoint_url, headers=headers, json=json_paylod)
                 if response.status_code >= 400:
-                    logger.warning(f"Failed to ingest {resource}")
+                    logger.warning(f"Failed to ingest {payload}: {response.content.decode()}")
     
     def ingest_systems(self, systems: List[Resource]):
         url = f"{self.csa_base_url}/systems"
