@@ -119,6 +119,15 @@ class Stager:
         with open(file) as system:
             return jsonpath.findall("$.id", system)[0] or None
 
+    def _resolve_first_observation(self, observations, default_value):
+        if os.path.exists(observations):
+            with open(observations) as obs_csv:
+                reader = csv.reader(obs_csv)
+                next(reader, None)  # skip the header
+                return next(reader, None)[0]
+        else:
+            return default_value
+
 
     def stage_datastreams(self, pegelstamm: List[Pegelstamm] = [], pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[Resource]:
         def _assign(acc, value):
@@ -130,9 +139,15 @@ class Stager:
         for pgnr, daten in pegeldaten.items():
             system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
+            
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
+            zeit = getattr(daten, "zeit")
+            
+            observations = self._resolve(STAGING_OBSERVATIONS, pgnr)
+            first_observation = self._resolve_first_observation(observations, zeit)
+            
             stub = {
                 "id": datastream_id,
                 "name": f"Water level for {pegelname} ({gewaesser})",
@@ -149,12 +164,12 @@ class Stager:
                     }
                 ],
                 "phenomenonTime": [
-                    getattr(daten, "zeit").isoformat(),
-                    getattr(daten, "zeit").isoformat(),
+                    first_observation,
+                    zeit.isoformat()
                 ],
                 "resultTime":[
-                    getattr(daten, "zeit").isoformat(),
-                    getattr(daten, "zeit").isoformat(),
+                    first_observation,
+                    zeit.isoformat()
                 ],
                 "type": "observation",
                 "resultType": "measure",
@@ -164,7 +179,6 @@ class Stager:
             staged_file = self._resolve(STAGING_DATASTREAM, pgnr)
             with open(staged_file, "w") as datastream:
                 datastream.write(json.dumps(stub, indent=2))
-
             staged_datastreams.append(Resource(staged_file, system_id))
         
         return staged_datastreams
