@@ -40,8 +40,8 @@ class Stager:
     def stage_systems(self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
         staged_systems = []
         for pegel in pegelstamm:
-            system_id = str(uuid.uuid4())
             pgnr = getattr(pegel, "pgnr")
+            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
             stub = {
                 "id": system_id,
                 "type": "SimpleProcess",
@@ -112,7 +112,11 @@ class Stager:
 
 
     def _resolve_id(self, json_file, pgnr: str):
-        with open(self._resolve(json_file, pgnr)) as system:
+        """Resolves ID from file or a random one if the file does not exists."""
+        file = self._resolve(json_file, pgnr)
+        if not os.path.exists(file):
+            return str(uuid.uuid4())
+        with open(file) as system:
             return jsonpath.findall("$.id", system)[0] or None
 
 
@@ -125,8 +129,8 @@ class Stager:
         staged_datastreams = []
         for pgnr, daten in pegeldaten.items():
             system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
+            datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
             pegel = pgnr_to_pegelstamm[pgnr]
-            datastream_id = str(uuid.uuid4())
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
             stub = {
