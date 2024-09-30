@@ -98,7 +98,11 @@ def parse_pegeldaten(ftp: FTP) -> Mapping[str, Pegeldaten]:
         elif current_pegel is not None:
             # parse pegeldata element
             if elem.tag == "zeit":
-                zeit = datetime.strptime(elem.text, "%d.%m.%Y %H:%M")
+                try:
+                    dt = f"{elem.text} +0100"  ## naive to CET
+                    zeit = datetime.strptime(dt, "%d.%m.%Y %H:%M %z")
+                except ValueError:
+                    zeit = datetime.fromisoformat(elem.text)
                 current_pegel["zeit"] = zeit
                 time_range = (min(time_range[0], zeit), max(time_range[1], zeit))
             elif elem.tag == "wert":
