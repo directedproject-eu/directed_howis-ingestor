@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from collections.abc import  Mapping
 
 from loguru import logger
@@ -12,6 +12,10 @@ from pyproj.crs import CRS
 FILE_KONTAKTE = "ev_kontakte.xml"
 FILE_PEGELDATEN = "ev_pegeldaten.xml"
 FILE_PEGELSTAMM = "ev_pegelstamm.xml"
+
+max_time = datetime.max.replace(tzinfo=timezone.utc)
+min_time = datetime.min.replace(tzinfo=timezone.utc)
+MAX_TIMERANGE =  (max_time, min_time)
 
 
 class Kontakt:
@@ -85,7 +89,7 @@ def parse_pegeldaten(ftp: FTP) -> Mapping[str, Pegeldaten]:
     
     pegeldaten = {}
     current_pegel = None
-    time_range = (datetime.max, datetime.min)
+    time_range = MAX_TIMERANGE
     for event, elem in parser.read_events():
         if elem.tag == "pegeldaten":
             if event == "start":
