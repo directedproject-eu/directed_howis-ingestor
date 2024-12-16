@@ -79,19 +79,18 @@ class Stager:
                         "address": {
                             "electronicMailAddress": getattr(kontakt, "email-public")
                         },
-                    },
-                    {
-                        # provide role via parser
-                        "role": "Technischer Kontakt",
-                        "title": "Individual",
-                        "individualName": getattr(kontakt, "name-techn"),
-                        "address": {
-                            "electronicMailAddress": getattr(kontakt, "email-techn"),
-                        },
-                        "phone": {
-                            "voice": getattr(kontakt, "telefon-techn")
-                        },
-                        
+                    # },
+                    # {
+                    #     # provide role via parser
+                    #     "role": "Technischer Kontakt",
+                    #     "title": "Individual",
+                    #     "individualName": getattr(kontakt, "name-techn"),
+                    #     "address": {
+                    #         "electronicMailAddress": getattr(kontakt, "email-techn"),
+                    #     },
+                    #     "phone": {
+                    #         "voice": getattr(kontakt, "telefon-techn")
+                    #     },
                     }
                 ],
                 "featuresOfInterest": [
