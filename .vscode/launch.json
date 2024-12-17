@@ -11,7 +11,7 @@
             "program": "cli.py",
             "cwd": "${workspaceFolder}/howis_ingestor",
             "args": [
-                "--username=directed",
+                "--ftp-username=directed",
                 "--destination=http://localhost:5000",
                 "ftp.erftverband.de"
             ],

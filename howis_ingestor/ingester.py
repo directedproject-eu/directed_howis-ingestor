@@ -3,19 +3,27 @@ import json
 import requests
 
 from typing import List
+from base64 import b64encode
 from loguru import logger
 
 from howis_ingestor.stager import Resource
 
 class Ingestor:
     
-    def __init__(self, stage_dir: str, csa_base_url: str):
+    def __init__(self, stage_dir: str, csa_base_url: str, csa_username: str = None, csa_password: str = ""):
         if not os.path.exists(stage_dir):
             raise Exception(f"Stage directory does not exist")
         self.stage_dir = stage_dir
         self.csa_base_url = csa_base_url
+        if csa_username:
+            credentials_bytes = f"{csa_username}:{csa_password}".encode()
+            self.credentials_b64 = b64encode(credentials_bytes).decode()
+        else:
+            self.credentials_b64 = None
     
     def _ingest_files(self, url: str, headers: dict = {}, resources: List[Resource] = []):
+        if self.credentials_b64:
+            headers["Authorization"] = f"Base {self.credentials_b64}"
         for resource in resources:
             with open(resource.file) as payload:
                 json_paylod = json.load(payload)

@@ -16,12 +16,12 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 
 
 @click.command()
-@click.option("-u", "--username", 
+@click.option("-u", "--ftp-username", 
               default=lambda: os.environ.get("HOWIS_FTP_USERNAME", ""),
               help="Username for the FTP connection. Alternatively set HOWIS_FTP_USERNAME.")
 @click.option("-w",
-              "password",
-              help="Prompt for password (place the flag at the end of the command!). Alternatively set HOWIS_FTP_PASSWORD.",
+              "--ftp-password",
+              help="Prompt for ftp password (place the flag at the end of the command!). Alternatively set HOWIS_FTP_PASSWORD.",
               prompt=True, 
               prompt_required=False,
               hide_input=True)
@@ -43,12 +43,19 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
               default="http://localhost:5000",
               help="Destination URL where to send CSA data to.")
 @click.argument("ftp_url")
-def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: str, ftp_url: str, destination: str):
+def main(ftp_username: str, ftp_password: str, stage_dir: str, dry_run: bool, encoding: str, ftp_url: str, destination: str):
     
-    password = password if password else os.environ.get("HOWIS_FTP_PASSWORD", "")
-    if not password:
+    ftp_password = ftp_password if ftp_password else os.environ.get("HOWIS_FTP_PASSWORD", "")
+    if not ftp_password:
         logger.error("HOWIS_FTP_PASSWORD is not set! Use -w flag for password prompt.")
         exit(1)
+    
+    csa_username = os.environ.get("HOWIS_CSA_USERNAME", None)
+    if not csa_username:
+        logger.info("HOWIS_CSA_USERNAME is not set!")
+    csa_password = os.environ.get("HOWIS_CSA_PASSWORD", "")
+    if not csa_password:
+        logger.info("HOWIS_CSA_PASSWORD is not set!")
         
     if stage_dir == default_stage_dir:
         if not os.path.exists(default_stage_dir):
@@ -56,10 +63,10 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
         Path(default_stage_dir).mkdir( exist_ok=True)
     logger.info(f"Using stage_dir at '{stage_dir}'.")
     
-    logger.info(f"Establish connection with user '{username}' to '{ftp_url}'")
+    logger.info(f"Establish connection with FTP username '{ftp_username}' to '{ftp_url}'")
     with FTP(ftp_url, encoding=encoding) as ftp:
         try:
-            ftp.login(user=username, passwd=password)
+            ftp.login(user=ftp_username, passwd=ftp_password)
             ftp.dir()  # print remote dir content
             
             kontakt = parser.parse_kontakt(ftp)
@@ -72,7 +79,7 @@ def main(username: str, password: str, stage_dir: str, dry_run: bool, encoding: 
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
             
-            ingestor = Ingestor(stage_dir, csa_base_url)
+            ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password)
             if not dry_run:
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_datastreams(staged_datastreams)
