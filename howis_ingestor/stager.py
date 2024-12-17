@@ -210,32 +210,44 @@ class Stager:
                 "schema": {
                     "obsFormat": "application/swe+json",
                     "recordSchema": {
-                        "type": "DataRecord",
-                        "fields": [
-                            {
-                                "name": "time",
-                                "type": "Time",
-                                "definition": "http://www.opengis.net/def/property/OGC/0/SamplingTime",
-                                "referenceFrame": "http://www.opengis.net/def/trs/BIPM/0/UTC",
-                                "label": "Sampling Time",
-                                "uom": {
-                                    "href": "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
-                                },
-                            },
-                            {
-                                "name": "level",
-                                "type": "Quantity",
-                                "definition": "http://purl.dataone.org/odo/ECSO_00001203",
-                                "label": "Water Level",
-                                "description": "The level of water.",
-                                "uom": {"code": "cm"},
-                                # "nilValues": [
-                                #     { "reason": "http://www.opengis.net/def/nil/OGC/0/missing", "value": "NaN" },
-                                #     { "reason": "http://www.opengis.net/def/nil/OGC/0/BelowDetectionRange", "value": "-Infinity" },
-                                #     { "reason": "http://www.opengis.net/def/nil/OGC/0/AboveDetectionRange", "value": "+Infinity" }
-                                # ]
-                            },
-                        ],
+                        "type": "Quantity",
+                        "definition": "http://purl.dataone.org/odo/ECSO_00001203",
+                        "label": "Water Level",
+                        "description": "The level of water.",
+                        "uom": {"code": "cm"},
+                        "nilValues": [
+                            { "reason": "http://www.opengis.net/def/nil/OGC/0/missing", "value": "NaN" },
+                            { "reason": "http://www.opengis.net/def/nil/OGC/0/BelowDetectionRange", "value": "-Infinity" },
+                            { "reason": "http://www.opengis.net/def/nil/OGC/0/AboveDetectionRange", "value": "+Infinity" }
+                        ]
+                        
+                        ## Alternative: DataRecord ~> Complex Observations
+                        # "type": "DataRecord",
+                        # "fields": [
+                        #     {
+                        #         "name": "time",
+                        #         "type": "Time",
+                        #         "definition": "http://www.opengis.net/def/property/OGC/0/SamplingTime",
+                        #         "referenceFrame": "http://www.opengis.net/def/trs/BIPM/0/UTC",
+                        #         "label": "Sampling Time",
+                        #         "uom": {
+                        #             "href": "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+                        #         },
+                        #     },
+                        #     {
+                        #         "name": "level",
+                        #         "type": "Quantity",
+                        #         "definition": "http://purl.dataone.org/odo/ECSO_00001203",
+                        #         "label": "Water Level",
+                        #         "description": "The level of water.",
+                        #         "uom": {"code": "cm"},
+                        #         # "nilValues": [
+                        #         #     { "reason": "http://www.opengis.net/def/nil/OGC/0/missing", "value": "NaN" },
+                        #         #     { "reason": "http://www.opengis.net/def/nil/OGC/0/BelowDetectionRange", "value": "-Infinity" },
+                        #         #     { "reason": "http://www.opengis.net/def/nil/OGC/0/AboveDetectionRange", "value": "+Infinity" }
+                        #         # ]
+                        #     },
+                        # ],
                     },
                     "encoding": {"type": "JSONEncoding"},
                 },
