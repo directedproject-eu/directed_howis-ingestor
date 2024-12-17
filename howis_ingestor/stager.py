@@ -23,8 +23,8 @@ class Resource:
         self.file = file
         self.parent_id = parent_id
 
+
 class Stager:
-    
     def __init__(self, stage_dir: str, csa_base_url: str):
         if not os.path.exists(stage_dir):
             raise Exception(f"Stage directory does not exist")
@@ -34,7 +34,9 @@ class Stager:
     def _resolve(self, filename, pgnr):
         return str(os.path.join(self.stage_dir, filename % pgnr))
 
-    def stage_systems(self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
+    def stage_systems(
+        self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []
+    ) -> List[Resource]:
         staged_systems = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
@@ -62,7 +64,7 @@ class Stager:
                     {
                         "label": "Pegelseite",
                         "value": getattr(pegel, "pegelseite-url"),
-                    }
+                    },
                 ],
                 # "typeOf": {
                 #     "href": "http://vocab.nerc.ac.uk/collection/L05/current/377/",
@@ -94,18 +96,17 @@ class Stager:
                     {
                         "title": getattr(pegel, "gewaesser"),
                         "href": "https://en.wikipedia.org/wiki/Erft",
-                        "type": "gewaesser"
+                        "type": "gewaesser",
                     }
                 ],
             }
-            
+
             stage_file = self._resolve(STAGING_SYSTEM, pgnr)
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
-                
+
             staged_systems.append(Resource(stage_file, None))
         return staged_systems
-
 
     def _resolve_id(self, json_file, pgnr: str):
         """Resolves ID from file or a random one if the file does not exists."""
@@ -124,18 +125,24 @@ class Stager:
         else:
             return default_value
 
-
-    def stage_datastreams(self, pegelstamm: List[Pegelstamm] = [], pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[Resource]:
+    def stage_datastreams(
+        self,
+        pegelstamm: List[Pegelstamm] = [],
+        pegeldaten: Mapping[str, Pegeldaten] = {},
+    ) -> List[Resource]:
         def _assign(acc, value):
             acc[getattr(value, "pgnr")] = value
             return acc
-        pgnr_to_pegelstamm = reduce(lambda acc, value: _assign(acc, value), pegelstamm, {})
-        
+
+        pgnr_to_pegelstamm = reduce(
+            lambda acc, value: _assign(acc, value), pegelstamm, {}
+        )
+
         staged_datastreams = []
         for pgnr, daten in pegeldaten.items():
             system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
-            
+
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
@@ -143,12 +150,12 @@ class Stager:
 
             observations = self._resolve(STAGING_OBSERVATIONS, pgnr)
             first_observation = self._resolve_first_observation(observations, zeit)
-            
+
             # http://media.hochwasserzentralen.de/lhp.dtd
             stub = {
                 "id": datastream_id,
                 "name": f"Water level for {pegelname} ({gewaesser})",
-                "formats": [ "application/json" ],
+                "formats": ["application/json"],
                 "system@link": {
                     "href": f"{self.csa_base_url}/systems/{system_id}",
                 },
@@ -177,7 +184,7 @@ class Stager:
                                 "label": "Sampling Time",
                                 "uom": {
                                     "href": "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
-                                }
+                                },
                             },
                             {
                                 "name": "level",
@@ -185,31 +192,27 @@ class Stager:
                                 "definition": "http://purl.dataone.org/odo/ECSO_00001203",
                                 "label": "Water Level",
                                 "description": "The level of water.",
-                                "uom": {
-                                    "code": "cm"
-                                },
+                                "uom": {"code": "cm"},
                                 # "nilValues": [
                                 #     { "reason": "http://www.opengis.net/def/nil/OGC/0/missing", "value": "NaN" },
                                 #     { "reason": "http://www.opengis.net/def/nil/OGC/0/BelowDetectionRange", "value": "-Infinity" },
                                 #     { "reason": "http://www.opengis.net/def/nil/OGC/0/AboveDetectionRange", "value": "+Infinity" }
                                 # ]
-                            }
-                        ]
+                            },
+                        ],
                     },
-                    "encoding": {
-                        "type": "JSONEncoding"
-                    }
+                    "encoding": {"type": "JSONEncoding"},
                 },
                 "live": False,
             }
-            
+
             staged_file = self._resolve(STAGING_DATASTREAM, pgnr)
             with open(staged_file, "w") as datastream:
                 datastream.write(json.dumps(stub, indent=2))
             staged_datastreams.append(Resource(staged_file, system_id))
-        
+
         return staged_datastreams
-    
+
     def _append_to_csv(self, pgnr, datastream_id, zeit, wert, einheit):
         staged_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
         is_new_file = not os.path.exists(staged_file)
@@ -219,15 +222,16 @@ class Stager:
                 writer.writerow(["zeit", "wert", "einheit", "datastream"])
             writer.writerow([zeit, wert, einheit, datastream_id])
         return csvfile
-    
 
-    def stage_observations(self, pegeldaten: Mapping[str, Pegeldaten] = {}) -> List[Resource]:
+    def stage_observations(
+        self, pegeldaten: Mapping[str, Pegeldaten] = {}
+    ) -> List[Resource]:
         staged_observations = []
         for pgnr, daten in pegeldaten.items():
             wert = getattr(daten, "wert")
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
-            
+
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
             csv_file = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
             stub = {
@@ -237,11 +241,11 @@ class Stager:
                 "result": wert
                 # TODO einheit?!
             }
-            
+
             staged_file = self._resolve(STAGING_OBSERVATION, pgnr)
             with open(staged_file, "w") as observation:
                 observation.write(json.dumps(stub, indent=2))
-            
+
             staged_observations.append(Resource(staged_file, datastream_id))
-            
+
         return staged_observations

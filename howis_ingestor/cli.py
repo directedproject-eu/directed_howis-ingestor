@@ -16,69 +16,96 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 
 
 @click.command()
-@click.option("-u", "--ftp-username", 
-              default=lambda: os.environ.get("HOWIS_FTP_USERNAME", ""),
-              help="Username for the FTP connection. Alternatively set HOWIS_FTP_USERNAME.")
-@click.option("-w",
-              "--ftp-password",
-              help="Prompt for ftp password (place the flag at the end of the command!). Alternatively set HOWIS_FTP_PASSWORD.",
-              prompt=True, 
-              prompt_required=False,
-              hide_input=True)
-@click.option("-s",
-              "--stage-dir",
-              "stage_dir",
-              default=default_stage_dir,
-              help="Directory containing CSA data to be ingested.")
-@click.option("--dry-run",
-              "dry_run",
-              is_flag=True,
-              help="Connect and parse HOWIS data but skips CSA ingestion.")
-@click.option("-e",
-              "--encoding",
-              default="ISO-8859-1",
-              help="Encoding to use for reading remote files.")
-@click.option("-d",
-              "--destination",
-              default="http://localhost:5000",
-              help="Destination URL where to send CSA data to.")
+@click.option(
+    "-u",
+    "--ftp-username",
+    default=lambda: os.environ.get("HOWIS_FTP_USERNAME", ""),
+    help="Username for the FTP connection. Alternatively set HOWIS_FTP_USERNAME.",
+)
+@click.option(
+    "-w",
+    "--ftp-password",
+    help="Prompt for ftp password (place the flag at the end of the command!). Alternatively set HOWIS_FTP_PASSWORD.",
+    prompt=True,
+    prompt_required=False,
+    hide_input=True,
+)
+@click.option(
+    "-s",
+    "--stage-dir",
+    "stage_dir",
+    default=default_stage_dir,
+    help="Directory containing CSA data to be ingested.",
+)
+@click.option(
+    "--dry-run",
+    "dry_run",
+    is_flag=True,
+    help="Connect and parse HOWIS data but skips CSA ingestion.",
+)
+@click.option(
+    "-e",
+    "--encoding",
+    default="ISO-8859-1",
+    help="Encoding to use for reading remote files.",
+)
+@click.option(
+    "-d",
+    "--destination",
+    default="http://localhost:5000",
+    help="Destination URL where to send CSA data to.",
+)
 @click.argument("ftp_url")
-def main(ftp_username: str, ftp_password: str, stage_dir: str, dry_run: bool, encoding: str, ftp_url: str, destination: str):
-    
-    ftp_password = ftp_password if ftp_password else os.environ.get("HOWIS_FTP_PASSWORD", "")
+def main(
+    ftp_username: str,
+    ftp_password: str,
+    stage_dir: str,
+    dry_run: bool,
+    encoding: str,
+    ftp_url: str,
+    destination: str,
+):
+
+    ftp_password = (
+        ftp_password if ftp_password else os.environ.get("HOWIS_FTP_PASSWORD", "")
+    )
     if not ftp_password:
         logger.error("HOWIS_FTP_PASSWORD is not set! Use -w flag for password prompt.")
         exit(1)
-    
+
     csa_username = os.environ.get("HOWIS_CSA_USERNAME", None)
     if not csa_username:
         logger.info("HOWIS_CSA_USERNAME is not set!")
     csa_password = os.environ.get("HOWIS_CSA_PASSWORD", "")
     if not csa_password:
         logger.info("HOWIS_CSA_PASSWORD is not set!")
-        
+
     if stage_dir == default_stage_dir:
         if not os.path.exists(default_stage_dir):
             logger.debug(f"Creating default stage_dir at '{default_stage_dir}'")
-        Path(default_stage_dir).mkdir( exist_ok=True)
+        Path(default_stage_dir).mkdir(exist_ok=True)
     logger.info(f"Using stage_dir at '{stage_dir}'.")
-    
-    logger.info(f"Establish connection with FTP username '{ftp_username}' to '{ftp_url}'")
+
+    logger.info(
+        f"Establish connection with FTP username '{ftp_username}' to '{ftp_url}'"
+    )
     with FTP(ftp_url, encoding=encoding) as ftp:
         try:
             ftp.login(user=ftp_username, passwd=ftp_password)
             ftp.dir()  # print remote dir content
-            
+
             kontakt = parser.parse_kontakt(ftp)
             pegelstamm = parser.parse_pegelstamm(ftp)
             pegeldaten = parser.parse_pegeldaten(ftp)
-            
-            csa_base_url = destination.slice[-1] if destination.endswith("/") else destination
+
+            csa_base_url = (
+                destination.slice[-1] if destination.endswith("/") else destination
+            )
             stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
-            
+
             ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password)
             if not dry_run:
                 ingestor.ingest_systems(staged_systems)
@@ -86,15 +113,15 @@ def main(ftp_username: str, ftp_password: str, stage_dir: str, dry_run: bool, en
                 ingestor.ingest_observations(staged_observations)
             else:
                 logger.warning("Skipping ingestion as if enabled dry-run.")
-            
+
         except Exception as e:
             logger.error(f"Failed to ingest data: {e}")
             # if logger.level == "DEBUG":
             #     logger.exception(e)
             raise e
-    
+
     logger.info("done!")
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()  # pylint: disable=no-value-for-parameter

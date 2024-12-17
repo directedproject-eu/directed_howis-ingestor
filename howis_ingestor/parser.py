@@ -1,6 +1,6 @@
 from typing import List
 from datetime import datetime, timezone
-from collections.abc import  Mapping
+from collections.abc import Mapping
 
 from loguru import logger
 from ftplib import FTP
@@ -15,7 +15,7 @@ FILE_PEGELSTAMM = "ev_pegelstamm.xml"
 
 max_time = datetime.max.replace(tzinfo=timezone.utc)
 min_time = datetime.min.replace(tzinfo=timezone.utc)
-MAX_TIMERANGE =  (max_time, min_time)
+MAX_TIMERANGE = (max_time, min_time)
 
 
 class Kontakt:
@@ -23,21 +23,23 @@ class Kontakt:
         for (key, value) in kwargs.items():
             setattr(self, key, value)
 
+
 class Pegelstamm:
     def __init__(self, **kwargs):
         for (key, value) in kwargs.items():
             setattr(self, key, value)
-            
+
+
 class Pegeldaten:
     def __init__(self, **kwargs):
         for (key, value) in kwargs.items():
             setattr(self, key, value)
-            
+
 
 def parse_kontakt(ftp: FTP):
-    parser = ET.XMLPullParser(['end'])
+    parser = ET.XMLPullParser(["end"])
     ftp.retrlines(f"RETR {FILE_KONTAKTE}", parser.feed)
-    
+
     kontakt = {}
     for event, elem in parser.read_events():
         if elem.tag not in ["lhp-daten", "kontakte", "infos"]:
@@ -46,10 +48,11 @@ def parse_kontakt(ftp: FTP):
         #     elem.iter("disclaimer")
     return Kontakt(**kontakt)
 
+
 def parse_pegelstamm(ftp: FTP) -> List[Pegelstamm]:
-    parser = ET.XMLPullParser(['start', 'end'])
+    parser = ET.XMLPullParser(["start", "end"])
     ftp.retrlines(f"RETR {FILE_PEGELSTAMM}", parser.feed)
-    
+
     pegelstamm = []
     srs_code = "EPSG:4326"
     current_pegel = None
@@ -71,22 +74,20 @@ def parse_pegelstamm(ftp: FTP) -> List[Pegelstamm]:
                 t = Transformer.from_crs(CRS(srs_code), CRS(4326), always_xy=True)
                 current_pegel["geometry"] = {
                     "type": "Point",
-                    "coordinates": t.transform(koordinaten[0], koordinaten[1])
-                    
+                    "coordinates": t.transform(koordinaten[0], koordinaten[1]),
                 }
             else:
                 # parse pegelstamm element
                 current_pegel[elem.tag] = elem.text
 
-    
     logger.debug(f"Parsed {len(pegelstamm)} pegelstamm entities.")
     return pegelstamm
 
 
 def parse_pegeldaten(ftp: FTP) -> Mapping[str, Pegeldaten]:
-    parser = ET.XMLPullParser(['start', 'end'])
+    parser = ET.XMLPullParser(["start", "end"])
     ftp.retrbinary(f"RETR {FILE_PEGELDATEN}", parser.feed)
-    
+
     pegeldaten = {}
     current_pegel = None
     time_range = MAX_TIMERANGE
@@ -114,9 +115,11 @@ def parse_pegeldaten(ftp: FTP) -> Mapping[str, Pegeldaten]:
                 current_pegel["wert"] = wert
             else:
                 current_pegel[elem.tag] = elem.text
-            
+
             if elem.get("einheit"):
                 current_pegel["einheit"] = elem.get("einheit")
-    
-    logger.debug(f"Parsed {len(pegeldaten)} data entities ranging from {str(time_range[0])}--{str(time_range[1])}.")
+
+    logger.debug(
+        f"Parsed {len(pegeldaten)} data entities ranging from {str(time_range[0])}--{str(time_range[1])}."
+    )
     return pegeldaten
