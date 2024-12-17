@@ -33,7 +33,7 @@ class Ingestor:
     def _ingest_files(
         self,
         post_url: str,
-        put_url: str,
+        put_url: str = None,
         headers: dict = {},
         resources: List[Resource] = [],
     ):
@@ -44,7 +44,7 @@ class Ingestor:
                 json_paylod = json.load(payload)
                 
                 resource_exists = False
-                if self.override:
+                if self.override and put_url:
                     get_headers = headers | { "Accept": headers["content-type"]}
                     del get_headers["content-type"]
                     response = requests.get(
@@ -54,9 +54,12 @@ class Ingestor:
                     resource_exists = response.status_code != 404
                 
                 if resource_exists:
-                    response = requests.put(
-                        put_url % resource.id, headers=headers, json=json_paylod
-                    )
+                    if put_url:
+                        response = requests.put(
+                            put_url % resource.id, headers=headers, json=json_paylod
+                        )
+                    else:
+                        logger.info("Skip update as no PUT URL provided.")
                 else:
                     endpoint_url = (
                         post_url % resource.parent_id if resource.parent_id else post_url
@@ -97,7 +100,8 @@ class Ingestor:
     def ingest_observations(self, observations: List[Resource]):
         self._ingest_files(
             post_url=f"{self.csa_base_url}/datastreams/%s/observations",
-            put_url=f"{self.csa_base_url}/observations/%s",
+            # PUT observations is not supported yet
+            #put_url=f"{self.csa_base_url}/observations/%s",
             resources=observations,
             headers={"content-type": "application/om+json"},
         )
