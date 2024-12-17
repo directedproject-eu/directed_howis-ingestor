@@ -13,6 +13,7 @@ from howis_ingestor.parser import Kontakt, Pegelstamm, Pegeldaten
 
 
 STAGING_SYSTEM = "%s_system.json"
+STAGING_FEATURE = "%s_feature.json"
 STAGING_DATASTREAM = "%s_datastream.json"
 STAGING_OBSERVATION = "%s_observation.json"
 STAGING_OBSERVATIONS = "%s_observations.csv"
@@ -96,7 +97,7 @@ class Stager:
                     {
                         "title": getattr(pegel, "gewaesser"),
                         "href": "https://en.wikipedia.org/wiki/Erft",
-                        "type": "gewaesser",
+                        "type": "text/html",
                     }
                 ],
             }
@@ -106,6 +107,39 @@ class Stager:
                 system.write(json.dumps(stub, indent=2))
 
             staged_systems.append(Resource(stage_file, None))
+        return staged_systems
+
+    def stage_features(self, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
+        staged_systems = []
+        for pegel in pegelstamm:
+            pgnr = getattr(pegel, "pgnr")
+            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
+            feature_id = self._resolve_id(STAGING_FEATURE, pgnr)
+            stub = {
+                "id": feature_id,
+                "type": "Feature",
+                "properties": {
+                    "uid": f"urn:x-erftverband:pegel:{pgnr}:sf",
+                    "name": pgnr,
+                    "label": getattr(pegel, "pgname"),
+                    "land_id": getattr(pegel, "land-id"),
+                    "group": getattr(pegel, "gruppe"),
+                    "href": getattr(pegel, "pegelseite-url"),
+                    "featureType": "http://www.opengis.net/def/samplingFeatureType/OGC-OM/2.0/SF_SamplingPoint",
+                    "sampledFeature@link": {
+                        "title": getattr(pegel, "gewaesser"),
+                        "href": "https://en.wikipedia.org/wiki/Erft",
+                        "type": "text/html",
+                    }
+                },
+                "geometry": getattr(pegel, "geometry"),
+            }
+
+            stage_file = self._resolve(STAGING_FEATURE, pgnr)
+            with open(stage_file, "w") as system:
+                system.write(json.dumps(stub, indent=2))
+
+            staged_systems.append(Resource(stage_file, system_id))
         return staged_systems
 
     def _resolve_id(self, json_file, pgnr: str):

@@ -50,6 +50,12 @@ class Ingestor:
             url, resources=systems, headers={"content-type": "application/sml+json"}
         )
 
+    def ingest_features(self, features: List[Resource]):
+        url = f"{self.csa_base_url}/systems/%s/samplingFeatures"
+        self._ingest_files(
+            url, resources=features, headers={"content-type": "application/geo+json"}
+        )
+
     def ingest_datastreams(self, datastreams: List[Resource]):
         url = f"{self.csa_base_url}/systems/%s/datastreams"
         self._ingest_files(

@@ -103,12 +103,14 @@ def main(
             )
             stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
+            staged_features = stager.stage_features(pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
 
             ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password)
             if not dry_run:
                 ingestor.ingest_systems(staged_systems)
+                ingestor.ingest_features(staged_features)
                 ingestor.ingest_datastreams(staged_datastreams)
                 ingestor.ingest_observations(staged_observations)
             else:
