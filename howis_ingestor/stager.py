@@ -142,8 +142,8 @@ class Stager:
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
-            zeit = getattr(daten, "zeit")
-            
+            zeit = getattr(daten, "zeit").isoformat()
+
             observations = self._resolve(STAGING_OBSERVATIONS, pgnr)
             first_observation = self._resolve_first_observation(observations, zeit)
             
@@ -160,17 +160,11 @@ class Stager:
                         "label": "Water Level",
                         "description": "Erft Water Level",
                         # this actually describes the gauge sensor
-                        "definition": "http://vocab.nerc.ac.uk/collection/L05/current/377/"
+                        "definition": "http://vocab.nerc.ac.uk/collection/L05/current/377/",
                     }
                 ],
-                "phenomenonTime": [
-                    first_observation,
-                    zeit.isoformat()
-                ],
-                "resultTime":[
-                    first_observation,
-                    zeit.isoformat()
-                ],
+                "phenomenonTime": [first_observation, zeit],
+                "resultTime": [first_observation, zeit],
                 "type": "observation",
                 "resultType": "measure",
                 "schema": {
