@@ -33,13 +33,11 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 @click.option(
     "-s",
     "--stage-dir",
-    "stage_dir",
     default=default_stage_dir,
     help="Directory containing CSA data to be ingested.",
 )
 @click.option(
     "--dry-run",
-    "dry_run",
     is_flag=True,
     help="Connect and parse HOWIS data but skips CSA ingestion.",
 )
