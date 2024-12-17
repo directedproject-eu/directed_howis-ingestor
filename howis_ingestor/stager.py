@@ -5,6 +5,7 @@ import csv
 import jsonpath
 
 from functools import reduce
+from loguru import logger
 from typing import List
 
 from collections.abc import Mapping
@@ -248,14 +249,29 @@ class Stager:
         return staged_datastreams
 
     def _append_to_csv(self, pgnr, datastream_id, zeit, wert, einheit):
-        staged_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
-        is_new_file = not os.path.exists(staged_file)
-        with open(staged_file, "a") as csvfile:
+        csv_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
+        last_line = None
+        is_new_file = not os.path.exists(csv_file)
+        if not is_new_file:
+            last_line = self._last_line(csv_file)
+        updated = False
+        with open(csv_file, "a") as csvfile:
             writer = csv.writer(csvfile, lineterminator="\n")
             if is_new_file:
                 writer.writerow(["zeit", "wert", "einheit", "datastream"])
-            writer.writerow([zeit, wert, einheit, datastream_id])
-        return csvfile
+            if not last_line.startswith(zeit):
+                updated = True
+                writer.writerow([zeit, wert, einheit, datastream_id])
+        return updated
+
+    def _last_line(self, filepath) -> str:
+        with open(filepath, "rb") as file:
+            # Go to the end of the file before the last break-line
+            file.seek(-2, os.SEEK_END) 
+            # Keep reading backward until you find the next break-line
+            while file.read(1) != b'\n':
+                file.seek(-2, os.SEEK_CUR)
+            return file.readline().decode()
 
     def stage_observations(
         self, pegeldaten: Mapping[str, Pegeldaten] = {}
@@ -267,19 +283,22 @@ class Stager:
             zeit = getattr(daten, "zeit").isoformat()
 
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
-            csv_file = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
-            stub = {
-                "id": str(uuid.uuid4()),
-                "datastream@id": datastream_id,
-                "resultTime": zeit,
-                "result": wert
-                # TODO einheit?!
-            }
+            updated = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
+            if not updated:
+                logger.debug(f"Skip observation for datastream {datastream_id} with existing time at {zeit}")
+            else:
+                stub = {
+                    "id": str(uuid.uuid4()),
+                    "datastream@id": datastream_id,
+                    "resultTime": zeit,
+                    "result": wert
+                    # TODO einheit?!
+                }
 
-            staged_file = self._resolve(STAGING_OBSERVATION, pgnr)
-            with open(staged_file, "w") as observation:
-                observation.write(json.dumps(stub, indent=2))
+                staged_file = self._resolve(STAGING_OBSERVATION, pgnr)
+                with open(staged_file, "w") as observation:
+                    observation.write(json.dumps(stub, indent=2))
 
-            staged_observations.append(Resource(staged_file, datastream_id))
+                staged_observations.append(Resource(staged_file, datastream_id))
 
         return staged_observations
