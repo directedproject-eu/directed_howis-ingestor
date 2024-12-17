@@ -2,14 +2,11 @@ import os
 import uuid
 import json
 import csv
+import jsonpath
 
 from functools import reduce
-from pathlib import Path
-from os.path import join
 from typing import List
 
-import jsonpath
-from loguru import logger
 from collections.abc import Mapping
 
 from howis_ingestor.parser import Kontakt, Pegelstamm, Pegeldaten
