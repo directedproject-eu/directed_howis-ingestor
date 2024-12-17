@@ -44,6 +44,11 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
     help="Connect and parse HOWIS data but skips CSA ingestion.",
 )
 @click.option(
+    "--override",
+    is_flag=True,
+    help="Allow to override existing CSA entities via PUT requests.",
+)
+@click.option(
     "-e",
     "--encoding",
     default="ISO-8859-1",
@@ -59,10 +64,11 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 def main(
     ftp_username: str,
     ftp_password: str,
+    ftp_url: str,
     stage_dir: str,
     dry_run: bool,
+    override: bool,
     encoding: str,
-    ftp_url: str,
     destination: str,
 ):
 
@@ -107,7 +113,7 @@ def main(
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
 
-            ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password)
+            ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override=override)
             if not dry_run:
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_features(staged_features)

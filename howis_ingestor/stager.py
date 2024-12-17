@@ -21,9 +21,10 @@ STAGING_OBSERVATIONS = "%s_observations.csv"
 
 
 class Resource:
-    def __init__(self, file: str, parent_id: str):
+    def __init__(self, id: uuid, file: str, parent_id: str):
         self.file = file
         self.parent_id = parent_id
+        self.id = id
 
 
 class Stager:
@@ -107,7 +108,7 @@ class Stager:
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
 
-            staged_systems.append(Resource(stage_file, None))
+            staged_systems.append(Resource(system_id, stage_file, None))
         return staged_systems
 
     def stage_features(self, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
@@ -131,7 +132,7 @@ class Stager:
                         "title": getattr(pegel, "gewaesser"),
                         "href": "https://en.wikipedia.org/wiki/Erft",
                         "type": "text/html",
-                    }
+                    },
                 },
                 "geometry": getattr(pegel, "geometry"),
             }
@@ -140,7 +141,7 @@ class Stager:
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
 
-            staged_systems.append(Resource(stage_file, system_id))
+            staged_systems.append(Resource(feature_id, stage_file, system_id))
         return staged_systems
 
     def _resolve_id(self, json_file, pgnr: str):
@@ -244,7 +245,7 @@ class Stager:
             staged_file = self._resolve(STAGING_DATASTREAM, pgnr)
             with open(staged_file, "w") as datastream:
                 datastream.write(json.dumps(stub, indent=2))
-            staged_datastreams.append(Resource(staged_file, system_id))
+            staged_datastreams.append(Resource(datastream_id, staged_file, system_id))
 
         return staged_datastreams
 
@@ -267,9 +268,9 @@ class Stager:
     def _last_line(self, filepath) -> str:
         with open(filepath, "rb") as file:
             # Go to the end of the file before the last break-line
-            file.seek(-2, os.SEEK_END) 
+            file.seek(-2, os.SEEK_END)
             # Keep reading backward until you find the next break-line
-            while file.read(1) != b'\n':
+            while file.read(1) != b"\n":
                 file.seek(-2, os.SEEK_CUR)
             return file.readline().decode()
 
@@ -282,13 +283,16 @@ class Stager:
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
 
+            observation_id = str(uuid.uuid4())
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
             updated = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
             if not updated:
-                logger.debug(f"Skip observation for datastream {datastream_id} with existing time at {zeit}")
+                logger.debug(
+                    f"Skip observation for datastream {datastream_id} with existing time at {zeit}"
+                )
             else:
                 stub = {
-                    "id": str(uuid.uuid4()),
+                    "id": observation_id,
                     "datastream@id": datastream_id,
                     "resultTime": zeit,
                     "result": wert
@@ -299,6 +303,6 @@ class Stager:
                 with open(staged_file, "w") as observation:
                     observation.write(json.dumps(stub, indent=2))
 
-                staged_observations.append(Resource(staged_file, datastream_id))
+                staged_observations.append(Resource(observation_id, staged_file, datastream_id))
 
         return staged_observations
