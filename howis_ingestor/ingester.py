@@ -31,7 +31,7 @@ class Ingestor:
         self, url: str, headers: dict = {}, resources: List[Resource] = []
     ):
         if self.credentials_b64:
-            headers["Authorization"] = f"Base {self.credentials_b64}"
+            headers["Authorization"] = f"Basic {self.credentials_b64}"
         for resource in resources:
             with open(resource.file) as payload:
                 json_paylod = json.load(payload)
