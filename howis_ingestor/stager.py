@@ -263,21 +263,23 @@ class Stager:
 
     def _append_to_csv(self, pgnr, datastream_id, zeit, wert, einheit):
         csv_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
-        last_line = None
         is_new_file = not os.path.exists(csv_file)
+
+        updated = False
+        last_line = None
         if not is_new_file:
             last_line = self._last_line(csv_file)
-        updated = False
         with open(csv_file, "a") as csvfile:
             writer = csv.writer(csvfile, lineterminator="\n")
             if is_new_file:
                 writer.writerow(["zeit", "wert", "einheit", "datastream"])
-            if not last_line.startswith(zeit):
-                updated = True
+
+            if last_line and not last_line.startswith(zeit):
                 writer.writerow([zeit, wert, einheit, datastream_id])
+                updated = True
         return updated
 
-    def _last_line(self, filepath) -> str:
+    def _last_line(self, filepath: str) -> str:
         with open(filepath, "rb") as file:
             # Go to the end of the file before the last break-line
             file.seek(-2, os.SEEK_END)
