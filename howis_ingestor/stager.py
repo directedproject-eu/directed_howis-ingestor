@@ -28,7 +28,7 @@ class Resource:
 
 
 class Stager:
-    def __init__(self, stage_dir: str, csa_base_url: str):
+    def __init__(self, stage_dir: str, csa_base_url: str = "http://localhost:5000"):
         if not os.path.exists(stage_dir):
             raise Exception(f"Stage directory does not exist")
         self.stage_dir = stage_dir

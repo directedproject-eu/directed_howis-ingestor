@@ -55,8 +55,7 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 @click.option(
     "-d",
     "--destination",
-    default="http://localhost:5000",
-    help="Destination URL where to send CSA data to.",
+    help="Destination URL where to send CSA data to. If empty, ingestion is skipped similar to --dry-run",
 )
 @click.argument("ftp_url")
 def main(
@@ -104,21 +103,25 @@ def main(
 
             csa_base_url = (
                 destination.slice[-1] if destination.endswith("/") else destination
-            )
+            ) if destination else None
             stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
             staged_features = stager.stage_features(pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
 
-            ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override=override)
-            if not dry_run:
+            if csa_base_url and not dry_run:
+                ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override=override)
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_features(staged_features)
                 ingestor.ingest_datastreams(staged_datastreams)
                 ingestor.ingest_observations(staged_observations)
             else:
-                logger.warning("Skipping ingestion as if enabled dry-run.")
+                if dry_run:
+                    logger.warning("--dry-run is enabled.")
+                elif not destination:
+                    logger.warning("Destination is empty.")
+                logger.warning("Skipping ingestion.")
 
         except Exception as e:
             logger.error(f"Failed to ingest data: {e}")
