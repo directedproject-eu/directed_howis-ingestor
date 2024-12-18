@@ -41,3 +41,14 @@ python howis_ingestor <ftp_url>
 ```
 
 To let the ingestor prompt for a password use the `-w` flag.
+
+## Docker
+
+Build and run ingestor via
+
+```sh
+docker build . -t directed/howis-ingestor:latest
+docker run -e HOWIS_CSA_USERNAME=csa -e HOWIS_CSA_PASSWORD=csa -e HOWIS_FTP_USERNAME=<username> -e HOWIS_FTP_PASSWORD=<password> directed/howis-ingestor:latest --dry-run -d http://<csa_host> <ftp-url>
+```
+
+Optionally add `--network host` to ingest into a CSA instance running on your host instance.
