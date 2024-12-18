@@ -1,7 +1,9 @@
 # Overview
 
-A simple HOWIS data ingestor.
-Applies ingestions in tree steps:
+A simple data ingestor reading LHP data for OGC API for Connected Systems.
+At this time, ingestions is optimized for HOWIS (Erftverband) data.
+
+Applies ingestion in tree steps:
 
 1. Downloading and parsing from FTP
 1. Transform and stage CSA requests
@@ -23,13 +25,15 @@ Applies ingestions in tree steps:
 $ poetry install
 ```
 
-## Usage
+## Staging
 
 After installation, the ingestor can be run:
 
 ```sh
 python howis_ingestor -u <user> <ftp_url> -w
 ```
+
+The command downloads and parses latest data from given FTP source, and finally prepares the output for ingestion into an OGC API for Connected Systems.
 
 Add the `--help` flag to get more information on available options.
 For example, you can export your credentials to your shell environment for safety reasons:
@@ -41,6 +45,11 @@ python howis_ingestor <ftp_url>
 ```
 
 To let the ingestor prompt for a password use the `-w` flag.
+
+## Ingestion
+
+Set the `-d` parameter to provide a destination URL for destination.
+Add `HOWIS_CSA_USERNAME` and `HOWIS_CSA_PASSWORD` if the OGC API for Connected Systems requires basic authentication.
 
 ## Docker
 
