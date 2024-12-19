@@ -101,17 +101,17 @@ def main(
             pegelstamm = parser.parse_pegelstamm(ftp)
             pegeldaten = parser.parse_pegeldaten(ftp)
 
-            csa_base_url = (
-                destination.slice[-1] if destination.endswith("/") else destination
-            ) if destination else None
-            stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
+            stager = Stager(stage_dir=stage_dir)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
             staged_features = stager.stage_features(pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
 
-            if csa_base_url and not dry_run:
-                ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override=override)
+            if destination and not dry_run:
+                csa_base_url = (
+                    destination.slice[-1] if destination.endswith("/") else destination
+                )
+                ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override)
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_features(staged_features)
                 ingestor.ingest_datastreams(staged_datastreams)
