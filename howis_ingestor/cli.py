@@ -111,7 +111,9 @@ def main(
             staged_observations = stager.stage_observations(pegeldaten)
 
             if csa_base_url and not dry_run:
-                ingestor = Ingestor(stage_dir, csa_base_url, csa_username, csa_password, override=override)
+                ingestor = Ingestor(
+                    stage_dir, csa_base_url, csa_username, csa_password, override=override
+                )
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_features(staged_features)
                 ingestor.ingest_datastreams(staged_datastreams)
