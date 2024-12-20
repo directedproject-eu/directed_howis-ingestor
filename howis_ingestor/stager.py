@@ -50,7 +50,7 @@ class Stager:
                 "type": "SimpleProcess",
                 "definition": "http://www.w3.org/ns/sosa/Sensor",
                 "uniqueId": getattr(pegel, "pegelseite-url"),
-                "description": "HOWIS Pegel",
+                "description": f"HOWIS Pegel for {pgnr}",
                 "label": getattr(pegel, "pgname"),
                 "identifiers": [
                     {
@@ -300,8 +300,8 @@ class Stager:
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
 
-            observation_id = str(uuid.uuid4())
             datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
+            observation_id = self._resolve_id(STAGING_OBSERVATION, zeit)
             updated = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
             if not updated:
                 logger.debug(

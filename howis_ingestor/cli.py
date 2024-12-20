@@ -104,6 +104,8 @@ def main(
             csa_base_url = (
                 destination.slice[-1] if destination.endswith("/") else destination
             ) if destination else None
+            
+            logger.info(f"Stage data before ingesting to '{csa_base_url}' ...")
             stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
             staged_features = stager.stage_features(pegelstamm)

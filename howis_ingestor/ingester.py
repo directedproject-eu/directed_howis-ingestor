@@ -34,6 +34,7 @@ class Ingestor:
         self,
         post_url: str,
         put_url: str = None,
+        get_url: str = None,
         headers: dict = {},
         resources: List[Resource] = [],
     ):
@@ -44,29 +45,30 @@ class Ingestor:
                 json_paylod = json.load(payload)
                 
                 resource_exists = False
-                if self.override and put_url:
+                get_url = get_url if get_url else put_url
+                if self.override and get_url:
                     get_headers = headers | { "Accept": headers["content-type"]}
                     del get_headers["content-type"]
-                    response = requests.get(
-                        put_url % resource.id, 
-                        headers=get_headers
-                    )
+                    response = requests.get(get_url % resource.id,  headers=get_headers)
                     resource_exists = response.status_code != 404
                 
-                if resource_exists:
-                    if put_url:
-                        response = requests.put(
-                            put_url % resource.id, headers=headers, json=json_paylod
-                        )
-                    else:
-                        logger.info("Skip update as no PUT URL provided.")
-                else:
+                if not resource_exists:
+                    # create entity
                     endpoint_url = (
                         post_url % resource.parent_id if resource.parent_id else post_url
                     )
                     response = requests.post(
                         endpoint_url, headers=headers, json=json_paylod
                     )
+                elif put_url:
+                    # update entity
+                    response = requests.put(
+                        put_url % resource.id, headers=headers, json=json_paylod
+                    )
+                else:
+                    # skip update
+                    logger.info(f"Skip PUTting resource: {put_url}.")
+                    
                 if response.status_code >= 400:
                     logger.warning("Failed to ingest:")
                     logger.warning(f"  headers: {headers}")
@@ -102,6 +104,7 @@ class Ingestor:
             post_url=f"{self.csa_base_url}/datastreams/%s/observations",
             # PUT observations is not supported yet
             #put_url=f"{self.csa_base_url}/observations/%s",
+            get_url=f"{self.csa_base_url}/observations/%s",
             resources=observations,
             headers={"content-type": "application/om+json"},
         )
