@@ -157,7 +157,8 @@ class Stager:
             with open(observations) as obs_csv:
                 reader = csv.reader(obs_csv)
                 next(reader, None)  # skip the header
-                return next(reader, None)[0]
+                row = next(reader, [])
+                return row[0] if len(row) > 0 else None
         else:
             return default_value
 
@@ -272,7 +273,7 @@ class Stager:
         with open(csv_file, "a") as csvfile:
             writer = csv.writer(csvfile, lineterminator="\n")
             if is_new_file:
-                writer.writerow(["zeit", "wert", "einheit", "datastream"])
+                writer.writerow(["zeit", "wert", "einheit", "datastream", "\n"])
 
             if is_new_file or last_line and not last_line.startswith(zeit):
                 writer.writerow([zeit, wert, einheit, datastream_id])
