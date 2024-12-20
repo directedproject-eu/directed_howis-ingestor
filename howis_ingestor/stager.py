@@ -274,7 +274,7 @@ class Stager:
             if is_new_file:
                 writer.writerow(["zeit", "wert", "einheit", "datastream"])
 
-            if last_line and not last_line.startswith(zeit):
+            if is_new_file or last_line and not last_line.startswith(zeit):
                 writer.writerow([zeit, wert, einheit, datastream_id])
                 updated = True
         return updated
