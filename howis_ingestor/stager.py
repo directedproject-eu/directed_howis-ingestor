@@ -19,6 +19,7 @@ STAGING_DATASTREAM = "%s_datastream.json"
 STAGING_OBSERVATION = "%s_observation.json"
 STAGING_OBSERVATIONS = "%s_observations.csv"
 
+UUID_NAMESPACE= uuid.UUID("{f964a9cf-b4d1-3de7-8f59-d6b885a7fb56}")
 
 class Resource:
     def __init__(self, id: uuid, file: str, parent_id: str):
@@ -148,7 +149,8 @@ class Stager:
         """Resolves ID from file or a random one if the file does not exists."""
         file = self._resolve(json_file, pgnr)
         if not os.path.exists(file):
-            return str(uuid.uuid4())
+            # create a non-random uuid from namepace and file
+            return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=file))
         with open(file) as system:
             return jsonpath.findall("$.id", system)[0] or None
 
