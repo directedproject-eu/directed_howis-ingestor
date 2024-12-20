@@ -28,10 +28,11 @@ class Resource:
 
 
 class Stager:
-    def __init__(self, stage_dir: str):
+    def __init__(self, stage_dir: str, csa_base_url: str = "http://localhost:5000"):
         if not os.path.exists(stage_dir):
             raise Exception(f"Stage directory does not exist")
         self.stage_dir = stage_dir
+        self.csa_base_url = csa_base_url
 
     def _resolve(self, filename, pgnr):
         return str(os.path.join(self.stage_dir, filename % pgnr))
@@ -191,6 +192,9 @@ class Stager:
                 "id": datastream_id,
                 "name": f"Water level for {pegelname} ({gewaesser})",
                 "formats": ["application/json"],
+                "system@link": {
+                    "href": f"{self.csa_base_url}/systems/{system_id}",
+                },
                 "observedProperties": [
                     {
                         "label": "Water Level",
