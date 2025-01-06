@@ -103,7 +103,7 @@ def main(
 
             csa_base_url = (
                 destination.slice[-1] if destination.endswith("/") else destination
-            ) if destination else None
+            ) if destination else "http://localhost:5000"  ## TODO csa impl currently expects system link
             
             logger.info(f"Stage data before ingesting to '{csa_base_url}' ...")
             stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
