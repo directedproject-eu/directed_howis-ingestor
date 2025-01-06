@@ -148,11 +148,8 @@ class Stager:
     def _resolve_id(self, json_file, pgnr: str):
         """Resolves ID from file or a random one if the file does not exists."""
         file = self._resolve(json_file, pgnr)
-        if not os.path.exists(file):
-            # create a non-random uuid from namepace and file
-            return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=file))
-        with open(file) as system:
-            return jsonpath.findall("$.id", system)[0] or None
+        # create a non-random uuid from namepace and file
+        return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=file))
 
     def _resolve_first_observation(self, observations, default_value):
         if os.path.exists(observations):
