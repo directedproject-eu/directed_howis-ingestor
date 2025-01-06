@@ -275,11 +275,12 @@ class Stager:
         with open(csv_file, "a") as csvfile:
             writer = csv.writer(csvfile, lineterminator="\n")
             if is_new_file:
-                writer.writerow(["zeit", "wert", "einheit", "datastream", "\n"])
-
-            if is_new_file or last_line and not last_line.startswith(zeit):
+                writer.writerow(["zeit", "wert", "einheit", "datastream"])
+            
+            if not last_line or last_line and not last_line.startswith(zeit):
                 writer.writerow([zeit, wert, einheit, datastream_id])
                 updated = True
+                
         return updated
 
     def _last_line(self, filepath: str) -> str:
