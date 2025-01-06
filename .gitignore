@@ -50,4 +50,5 @@ coverage.xml
 # Eclipse
 .settings
 
+data
 ev_*.xml
