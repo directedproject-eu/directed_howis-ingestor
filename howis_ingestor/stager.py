@@ -2,7 +2,6 @@ import os
 import uuid
 import json
 import csv
-import jsonpath
 
 from functools import reduce
 from loguru import logger
@@ -19,7 +18,14 @@ STAGING_DATASTREAM = "%s_datastream.json"
 STAGING_OBSERVATION = "%s_observation.json"
 STAGING_OBSERVATIONS = "%s_observations.csv"
 
-UUID_NAMESPACE= uuid.UUID("{f964a9cf-b4d1-3de7-8f59-d6b885a7fb56}")
+CSV_DELIMITER = ","
+UUID_NAMESPACE = uuid.UUID("{f964a9cf-b4d1-3de7-8f59-d6b885a7fb56}")
+
+
+def _resolve_id(discriminator: str):
+    """Resolves reproducable unique ID based on the given input."""
+    # create a non-random uuid from namepace and file
+    return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=discriminator))
 
 class Resource:
     def __init__(self, id: uuid, file: str, parent_id: str):
@@ -27,6 +33,56 @@ class Resource:
         self.parent_id = parent_id
         self.id = id
 
+    @property
+    def payload(self):
+        with open(self.file) as payload:
+            return json.load(payload)
+
+class ObservationBuffer:
+    
+    def __init__(self, observations_csv: str):
+        self.observations_csv = observations_csv
+        self.temp_file = f"{observations_csv}.temp"
+        self.buffer = []
+
+    def __enter__(self):
+        # TODO create lock file and release in __exit__
+        with open(self.observations_csv, "r", newline='', encoding="utf-8") as csv_file:
+            reader = csv.reader(csv_file)
+            self.buffer = list(reader)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        with open(self.temp_file, 'w', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+            # write back rows still in buffer
+            writer.writerows(self.buffer)
+
+        os.replace(self.temp_file, self.observations_csv)
+        # TODO release lock file
+
+    def __iter__(self):
+        for row_values in self.buffer:
+            if row_values and not row_values[0].startswith("#"):
+                zeit = row_values[0]
+                wert = row_values[1]
+                einheit = row_values[2]
+                datastream_id = row_values[3]
+                id = _resolve_id(f"{datastream_id}_{zeit}")
+                
+                yield {
+                    "id": id,
+                    "parent_id": datastream_id,
+                    "payload": {
+                        "id": id,
+                        "datastream@id": datastream_id,
+                        "resultTime": zeit,
+                        "result": float(wert)
+                    }
+                }
+
+    def remove_from_buffer(self, row):
+        self.buffer.remove(row)
 
 class Stager:
     def __init__(self, stage_dir: str, csa_base_url: str):
@@ -35,8 +91,8 @@ class Stager:
         self.stage_dir = stage_dir
         self.csa_base_url = csa_base_url
 
-    def _resolve(self, filename, pgnr):
-        return str(os.path.join(self.stage_dir, filename % pgnr))
+    def _resolve(self, filename):
+        return str(os.path.join(self.stage_dir, filename))
 
     def stage_systems(
         self, kontakt: Kontakt, pegelstamm: List[Pegelstamm] = []
@@ -44,7 +100,8 @@ class Stager:
         staged_systems = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
-            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
+            stage_file = self._resolve(STAGING_SYSTEM % pgnr)
+            system_id = _resolve_id(stage_file)
             stub = {
                 "id": system_id,
                 "type": "SimpleProcess",
@@ -105,7 +162,6 @@ class Stager:
                 ],
             }
 
-            stage_file = self._resolve(STAGING_SYSTEM, pgnr)
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
 
@@ -116,8 +172,9 @@ class Stager:
         staged_systems = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
-            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
-            feature_id = self._resolve_id(STAGING_FEATURE, pgnr)
+            system_id = _resolve_id(self._resolve(STAGING_SYSTEM % pgnr))
+            stage_file = self._resolve(STAGING_FEATURE % pgnr)
+            feature_id = _resolve_id(stage_file)
             stub = {
                 "id": feature_id,
                 "type": "Feature",
@@ -138,18 +195,11 @@ class Stager:
                 "geometry": getattr(pegel, "geometry"),
             }
 
-            stage_file = self._resolve(STAGING_FEATURE, pgnr)
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
 
             staged_systems.append(Resource(feature_id, stage_file, system_id))
         return staged_systems
-
-    def _resolve_id(self, json_file, pgnr: str):
-        """Resolves ID from file or a random one if the file does not exists."""
-        file = self._resolve(json_file, pgnr)
-        # create a non-random uuid from namepace and file
-        return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=file))
 
     def _resolve_first_observation(self, observations, default_value):
         if os.path.exists(observations):
@@ -176,15 +226,16 @@ class Stager:
 
         staged_datastreams = []
         for pgnr, daten in pegeldaten.items():
-            system_id = self._resolve_id(STAGING_SYSTEM, pgnr)
-            datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
+            system_id = _resolve_id(self._resolve(STAGING_SYSTEM % pgnr))
+            stage_file = self._resolve(STAGING_DATASTREAM % pgnr)
+            datastream_id = _resolve_id(stage_file)
 
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
             zeit = getattr(daten, "zeit").isoformat()
 
-            observations = self._resolve(STAGING_OBSERVATIONS, pgnr)
+            observations = self._resolve(STAGING_OBSERVATIONS % pgnr)
             first_observation = self._resolve_first_observation(observations, zeit)
 
             # http://media.hochwasserzentralen.de/lhp.dtd
@@ -208,7 +259,7 @@ class Stager:
                 "type": "observation",
                 "resultType": "measure",
                 "schema": {
-                    "obsFormat": "application/swe+json",
+                    "obsFormat": "application/om+json",
                     "recordSchema": {
                         "type": "Quantity",
                         "definition": "http://purl.dataone.org/odo/ECSO_00001203",
@@ -254,27 +305,38 @@ class Stager:
                 "live": False,
             }
 
-            staged_file = self._resolve(STAGING_DATASTREAM, pgnr)
-            with open(staged_file, "w") as datastream:
+            with open(stage_file, "w") as datastream:
                 datastream.write(json.dumps(stub, indent=2))
-            staged_datastreams.append(Resource(datastream_id, staged_file, system_id))
+            staged_datastreams.append(Resource(datastream_id, stage_file, system_id))
 
         return staged_datastreams
 
-    def _append_to_csv(self, pgnr, datastream_id, zeit, wert, einheit):
-        csv_file = self._resolve(STAGING_OBSERVATIONS, pgnr)
+    def _append_to(self, csv_file, datastream_id, zeit, wert, einheit):
         is_new_file = not os.path.exists(csv_file)
 
         updated = False
         last_line = None
         if not is_new_file:
             last_line = self._last_line(csv_file)
-        with open(csv_file, "a") as csvfile:
-            writer = csv.writer(csvfile, lineterminator="\n")
+        with open(csv_file, "a+", newline='', encoding="utf-8") as csvfile:
             if is_new_file:
-                writer.writerow(["zeit", "wert", "einheit", "datastream"])
+                delimiter = CSV_DELIMITER
+                # write header row as comment
+                header = ["zeit", "wert", "einheit", "datastream"]
+                csvfile.write("#" + delimiter.join(header)+ "\n")
+            else:
+                # Ensure header is commented out
+                first_line = csvfile.readline()
+                remaining_content = csvfile.read()
+                if first_line and not first_line.startswith("#"):
+                    csvfile.seek(0)
+                    csvfile.write(f"#{first_line}{remaining_content}")
+                    csvfile.truncate()
             
             if not last_line or last_line and not last_line.startswith(zeit):
+                # Go to the end of the file
+                csvfile.seek(0, os.SEEK_END)
+                writer = csv.writer(csvfile, delimiter=CSV_DELIMITER, lineterminator="\n")
                 writer.writerow([zeit, wert, einheit, datastream_id])
                 updated = True
                 
@@ -291,16 +353,17 @@ class Stager:
 
     def stage_observations(
         self, pegeldaten: Mapping[str, Pegeldaten] = {}
-    ) -> List[Resource]:
+    ) -> List[str]:
         staged_observations = []
         for pgnr, daten in pegeldaten.items():
             wert = getattr(daten, "wert")
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
 
-            datastream_id = self._resolve_id(STAGING_DATASTREAM, pgnr)
-            observation_id = self._resolve_id(STAGING_OBSERVATION, zeit)
-            updated = self._append_to_csv(pgnr, datastream_id, zeit, wert, einheit)
+            datastream_id = _resolve_id(self._resolve(STAGING_DATASTREAM % pgnr))
+            observation_id = _resolve_id(self._resolve(STAGING_OBSERVATION % zeit))
+            csv_file = self._resolve(STAGING_OBSERVATIONS % pgnr)
+            updated = self._append_to(csv_file, datastream_id, zeit, wert, einheit)
             if not updated:
                 logger.debug(
                     f"Skip observation for datastream {datastream_id} with existing time at {zeit}"
@@ -311,13 +374,11 @@ class Stager:
                     "datastream@id": datastream_id,
                     "resultTime": zeit,
                     "result": wert
-                    # TODO einheit?!
                 }
 
-                staged_file = self._resolve(STAGING_OBSERVATION, pgnr)
+                staged_file = self._resolve(STAGING_OBSERVATION % pgnr)
                 with open(staged_file, "w") as observation:
                     observation.write(json.dumps(stub, indent=2))
 
-                staged_observations.append(Resource(observation_id, staged_file, datastream_id))
-
+        staged_observations.append(csv_file)
         return staged_observations

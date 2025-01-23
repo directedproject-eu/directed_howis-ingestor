@@ -12,7 +12,10 @@
             "cwd": "${workspaceFolder}/howis_ingestor",
             "args": [
                 "--ftp-username=directed",
-                "--destination=http://localhost:5000",
+                "--stage-dir=./data",
+                //"--destination=http://localhost:5000",
+                // "--dry-run",
+                "--override",
                 "ftp.erftverband.de"
             ],
             "console": "integratedTerminal"

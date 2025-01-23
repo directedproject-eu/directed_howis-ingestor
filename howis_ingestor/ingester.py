@@ -1,12 +1,27 @@
 import os
-import json
 import requests
 
 from typing import List
 from base64 import b64encode
 from loguru import logger
 
-from howis_ingestor.stager import Resource
+from howis_ingestor.stager import Resource, ObservationBuffer
+
+
+def _(attr, dict_or_obj):
+    return (
+        (
+            dict_or_obj[attr]
+            if attr in dict_or_obj
+            else None
+        )
+        if isinstance(dict_or_obj, dict)
+        else (
+            getattr(dict_or_obj, attr)
+            if hasattr(dict_or_obj, attr)
+            else None
+        )
+    )
 
 
 class Ingestor:
@@ -36,44 +51,44 @@ class Ingestor:
         put_url: str = None,
         get_url: str = None,
         headers: dict = {},
-        resources: List[Resource] = [],
+        resources: iter = [],
     ):
         if self.credentials_b64:
             headers["Authorization"] = f"Basic {self.credentials_b64}"
         for resource in resources:
-            with open(resource.file) as payload:
-                json_paylod = json.load(payload)
+            json_paylod = _("payload", resource)
+            
+            resource_exists = False
+            get_url = get_url if get_url else put_url
+            if self.override and get_url:
+                get_headers = headers | { "Accept": headers["content-type"]}
+                del get_headers["content-type"]
+                response = requests.get(get_url % _("id", resource),  headers=get_headers)
+                resource_exists = response.status_code != 404
+            
+            if not resource_exists:
+                # create entity
+                endpoint_url = (
+                    post_url % _("parent_id", resource) if _("parent_id", resource) else post_url
+                )
+                response = requests.post(
+                    endpoint_url, headers=headers, json=json_paylod
+                )
+            elif put_url:
+                # update entity
+                response = requests.put(
+                    put_url % _("id", resource), headers=headers, json=json_paylod
+                )
+            else:
+                # skip update
+                logger.info(f"Skip PUTting resource: {put_url}.")
                 
-                resource_exists = False
-                get_url = get_url if get_url else put_url
-                if self.override and get_url:
-                    get_headers = headers | { "Accept": headers["content-type"]}
-                    del get_headers["content-type"]
-                    response = requests.get(get_url % resource.id,  headers=get_headers)
-                    resource_exists = response.status_code != 404
-                
-                if not resource_exists:
-                    # create entity
-                    endpoint_url = (
-                        post_url % resource.parent_id if resource.parent_id else post_url
-                    )
-                    response = requests.post(
-                        endpoint_url, headers=headers, json=json_paylod
-                    )
-                elif put_url:
-                    # update entity
-                    response = requests.put(
-                        put_url % resource.id, headers=headers, json=json_paylod
-                    )
-                else:
-                    # skip update
-                    logger.info(f"Skip PUTting resource: {put_url}.")
-                    
-                if response.status_code >= 400:
-                    logger.warning("Failed to ingest:")
-                    logger.warning(f"  headers: {headers}")
-                    logger.warning(f"  payload: {json_paylod}")
-                    logger.warning(f"  response: {response.content.decode()}")
+            if response.status_code >= 400:
+                logger.warning("Failed to ingest:")
+                logger.warning(f"  headers: {headers}")
+                logger.warning(f"  payload: {json_paylod}")
+                logger.warning(f"  response: {response.content.decode()}")
+            
 
     def ingest_systems(self, systems: List[Resource]):
         self._ingest_files(
@@ -99,12 +114,14 @@ class Ingestor:
             headers={"content-type": "application/json"},
         )
 
-    def ingest_observations(self, observations: List[Resource]):
-        self._ingest_files(
-            post_url=f"{self.csa_base_url}/datastreams/%s/observations",
-            # PUT observations is not supported yet
-            #put_url=f"{self.csa_base_url}/observations/%s",
-            get_url=f"{self.csa_base_url}/observations/%s",
-            resources=observations,
-            headers={"content-type": "application/om+json"},
-        )
+    def ingest_observations(self, observations: List[str]):
+        for file in observations:
+           with ObservationBuffer(file) as buffer:
+                self._ingest_files(
+                    post_url=f"{self.csa_base_url}/datastreams/%s/observations",
+                    # PUT observations is not supported yet
+                    #put_url=f"{self.csa_base_url}/observations/%s",
+                    get_url=f"{self.csa_base_url}/observations/%s",
+                    resources=buffer,
+                    headers={"content-type": "application/om+json"},
+                )
