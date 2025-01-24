@@ -66,7 +66,7 @@ class ObservationBuffer:
             if row_values and not row_values[0].startswith("#"):
                 zeit = row_values[0]
                 wert = row_values[1]
-                einheit = row_values[2]
+                #einheit = row_values[2]
                 datastream_id = row_values[3]
                 id = _resolve_id(f"{datastream_id}_{zeit}")
                 
@@ -318,7 +318,8 @@ class Stager:
         last_line = None
         if not is_new_file:
             last_line = self._last_line(csv_file)
-        with open(csv_file, "a+", newline='', encoding="utf-8") as csvfile:
+        
+        with open(csv_file, "r+", newline='', encoding="utf-8") as csvfile:
             if is_new_file:
                 delimiter = CSV_DELIMITER
                 # write header row as comment
@@ -333,9 +334,8 @@ class Stager:
                     csvfile.write(f"#{first_line}{remaining_content}")
                     csvfile.truncate()
             
-            if not last_line or last_line and not last_line.startswith(zeit):
-                # Go to the end of the file
-                csvfile.seek(0, os.SEEK_END)
+        if last_line and not last_line.startswith(zeit):
+            with open(csv_file, "a", newline='', encoding="utf-8") as csvfile:
                 writer = csv.writer(csvfile, delimiter=CSV_DELIMITER, lineterminator="\n")
                 writer.writerow([zeit, wert, einheit, datastream_id])
                 updated = True
@@ -344,11 +344,14 @@ class Stager:
 
     def _last_line(self, filepath: str) -> str:
         with open(filepath, "rb") as file:
-            # Go to the end of the file before the last break-line
-            file.seek(-2, os.SEEK_END)
-            # Keep reading backward until you find the next break-line
-            while file.read(1) != b"\n":
-                file.seek(-2, os.SEEK_CUR)
+            try:
+                # Go to the end of the file before the last break-line
+                file.seek(-2, os.SEEK_END)
+                # Keep reading backward until you find the next break-line
+                while file.read(1) != b"\n":
+                    file.seek(-2, os.SEEK_CUR)
+            except OSError:
+                file.seek(0)
             return file.readline().decode()
 
     def stage_observations(
