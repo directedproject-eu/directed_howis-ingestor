@@ -13,8 +13,9 @@
             "args": [
                 "--ftp-username=directed",
                 "--stage-dir=./data",
-                //"--destination=http://localhost:5000",
-                // "--dry-run",
+                "--destination=http://localhost:5000",
+                //"--internal-destination=http://localhost:5555",
+                "--dry-run",
                 "--override",
                 "ftp.erftverband.de"
             ],

@@ -55,7 +55,11 @@ default_stage_dir = join(tempfile.gettempdir(), "howis_staging")
 @click.option(
     "-d",
     "--destination",
-    help="Destination URL where to send CSA data to. If empty, ingestion is skipped similar to --dry-run",
+    help="CSA URL for external access.",
+)
+@click.option(
+    "--internal-destination",
+    help="Internal URL for ingesting data. If empty --destination is tried.",
 )
 @click.argument("ftp_url")
 def main(
@@ -67,6 +71,7 @@ def main(
     override: bool,
     encoding: str,
     destination: str,
+    internal_destination: str,
 ):
 
     ftp_password = (
@@ -101,20 +106,21 @@ def main(
             pegelstamm = parser.parse_pegelstamm(ftp)
             pegeldaten = parser.parse_pegeldaten(ftp)
 
-            csa_base_url = (
+            external_csa_base_url = (
                 destination.slice[-1] if destination.endswith("/") else destination
             ) if destination else "http://localhost:5000"  ## TODO csa impl currently expects system link
             
-            logger.info(f"Stage data before ingesting to '{csa_base_url}' ...")
-            stager = Stager(stage_dir=stage_dir, csa_base_url=csa_base_url)
+            stager = Stager(stage_dir=stage_dir, csa_base_url=external_csa_base_url)
             staged_systems = stager.stage_systems(kontakt, pegelstamm)
             staged_features = stager.stage_features(pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
 
-            if csa_base_url and not dry_run:
+            ingestion_csa_base_url = internal_destination or external_csa_base_url
+            logger.info(f"Stage data before ingesting to '{ingestion_csa_base_url}' ...")
+            if ingestion_csa_base_url and not dry_run:
                 ingestor = Ingestor(
-                    stage_dir, csa_base_url, csa_username, csa_password, override=override
+                    stage_dir, ingestion_csa_base_url, csa_username, csa_password, override=override
                 )
                 ingestor.ingest_systems(staged_systems)
                 ingestor.ingest_features(staged_features)
