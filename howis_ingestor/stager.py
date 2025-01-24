@@ -318,14 +318,21 @@ class Stager:
         last_line = None
         if not is_new_file:
             last_line = self._last_line(csv_file)
+
+        def write_header(csvfile):
+            delimiter = CSV_DELIMITER
+            # write header row as comment
+            header = ["zeit", "wert", "einheit", "datastream"]
+            csvfile.write("#" + delimiter.join(header)+ "\n")
         
-        with open(csv_file, "w+", newline='', encoding="utf-8") as csvfile:
+        if is_new_file:
+            with open(csv_file, "w+", newline='', encoding="utf-8") as csvfile:
+                write_header(csvfile)    
+        
+        with open(csv_file, "r+", newline='', encoding="utf-8") as csvfile:
             first_line = csvfile.readline()
-            if is_new_file or not first_line:
-                delimiter = CSV_DELIMITER
-                # write header row as comment
-                header = ["zeit", "wert", "einheit", "datastream"]
-                csvfile.write("#" + delimiter.join(header)+ "\n")
+            if not first_line:
+                write_header(csvfile)
             else:
                 # Ensure header is commented out
                 remaining_content = csvfile.read()
