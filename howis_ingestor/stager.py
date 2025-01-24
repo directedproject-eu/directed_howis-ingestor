@@ -320,14 +320,14 @@ class Stager:
             last_line = self._last_line(csv_file)
         
         with open(csv_file, "w+", newline='', encoding="utf-8") as csvfile:
-            if is_new_file:
+            first_line = csvfile.readline()
+            if is_new_file or not first_line:
                 delimiter = CSV_DELIMITER
                 # write header row as comment
                 header = ["zeit", "wert", "einheit", "datastream"]
                 csvfile.write("#" + delimiter.join(header)+ "\n")
             else:
                 # Ensure header is commented out
-                first_line = csvfile.readline()
                 remaining_content = csvfile.read()
                 if first_line and not first_line.startswith("#"):
                     csvfile.seek(0)
