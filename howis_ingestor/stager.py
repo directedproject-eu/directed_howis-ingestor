@@ -319,7 +319,7 @@ class Stager:
         if not is_new_file:
             last_line = self._last_line(csv_file)
         
-        with open(csv_file, "r+", newline='', encoding="utf-8") as csvfile:
+        with open(csv_file, "w+", newline='', encoding="utf-8") as csvfile:
             if is_new_file:
                 delimiter = CSV_DELIMITER
                 # write header row as comment
