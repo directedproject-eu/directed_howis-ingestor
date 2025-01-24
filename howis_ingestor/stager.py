@@ -334,7 +334,7 @@ class Stager:
                     csvfile.write(f"#{first_line}{remaining_content}")
                     csvfile.truncate()
             
-        if last_line and not last_line.startswith(zeit):
+        if not last_line or last_line and not last_line.startswith(zeit):
             with open(csv_file, "a", newline='', encoding="utf-8") as csvfile:
                 writer = csv.writer(csvfile, delimiter=CSV_DELIMITER, lineterminator="\n")
                 writer.writerow([zeit, wert, einheit, datastream_id])
