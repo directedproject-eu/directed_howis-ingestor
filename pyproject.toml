@@ -38,7 +38,7 @@ pyproj = "^3.6.1"
 requests = "^2.32.3"
 python-jsonpath = "^1.2.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 
 # Formatters
 black = "^22.1"

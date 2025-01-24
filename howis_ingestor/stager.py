@@ -207,7 +207,7 @@ class Stager:
                 reader = csv.reader(obs_csv)
                 next(reader, None)  # skip the header
                 row = next(reader, [])
-                return row[0] if len(row) > 0 else None
+                return row[0] if len(row) > 0 else default_value
         else:
             return default_value
 
