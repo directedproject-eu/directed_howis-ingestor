@@ -22,7 +22,7 @@ CSV_DELIMITER = ","
 UUID_NAMESPACE = uuid.UUID("{f964a9cf-b4d1-3de7-8f59-d6b885a7fb56}")
 
 
-def _resolve_id(discriminator: str):
+def _unique_id(discriminator: str):
     """Resolves reproducable unique ID based on the given input."""
     # create a non-random uuid from namepace and file
     return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=discriminator))
@@ -46,7 +46,6 @@ class ObservationBuffer:
         self.buffer = []
 
     def __enter__(self):
-        # TODO create lock file and release in __exit__
         with open(self.observations_csv, "r", newline='', encoding="utf-8") as csv_file:
             reader = csv.reader(csv_file)
             self.buffer = list(reader)
@@ -57,9 +56,10 @@ class ObservationBuffer:
             writer = csv.writer(csv_file)
             # write back rows still in buffer
             writer.writerows(self.buffer)
-
         os.replace(self.temp_file, self.observations_csv)
-        # TODO release lock file
+
+    def __len__(self):
+        return len(self.buffer)
 
     def __iter__(self):
         for _, row_values in enumerate(self.buffer):
@@ -68,7 +68,7 @@ class ObservationBuffer:
                 wert = row_values[1]
                 #einheit = row_values[2]
                 datastream_id = row_values[3]
-                id = _resolve_id(f"{datastream_id}_{zeit}")
+                id = _unique_id(f"{datastream_id}_{zeit}")
                 
                 yield {
                     "id": id,
@@ -92,7 +92,7 @@ class Stager:
         self.stage_dir = stage_dir
         self.csa_base_url = csa_base_url
 
-    def _resolve(self, filename):
+    def _absolute_file(self, filename):
         return str(os.path.join(self.stage_dir, filename))
 
     def stage_systems(
@@ -101,8 +101,9 @@ class Stager:
         staged_systems = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
-            stage_file = self._resolve(STAGING_SYSTEM % pgnr)
-            system_id = _resolve_id(stage_file)
+            filename = STAGING_SYSTEM % pgnr
+            stage_file = self._absolute_file(filename)
+            system_id = _unique_id(filename)
             stub = {
                 "id": system_id,
                 "type": "SimpleProcess",
@@ -167,15 +168,18 @@ class Stager:
                 system.write(json.dumps(stub, indent=2))
 
             staged_systems.append(Resource(system_id, stage_file, None))
+            
+        logger.info(f"Staged systems: {len(staged_systems)}")
         return staged_systems
 
     def stage_features(self, pegelstamm: List[Pegelstamm] = []) -> List[Resource]:
-        staged_systems = []
+        staged_features = []
         for pegel in pegelstamm:
             pgnr = getattr(pegel, "pgnr")
-            system_id = _resolve_id(self._resolve(STAGING_SYSTEM % pgnr))
-            stage_file = self._resolve(STAGING_FEATURE % pgnr)
-            feature_id = _resolve_id(stage_file)
+            system_id = _unique_id(STAGING_SYSTEM % pgnr)
+            staging_filename = STAGING_FEATURE % pgnr
+            stage_file = self._absolute_file(staging_filename)
+            feature_id = _unique_id(staging_filename)
             stub = {
                 "id": feature_id,
                 "type": "Feature",
@@ -199,8 +203,10 @@ class Stager:
             with open(stage_file, "w") as system:
                 system.write(json.dumps(stub, indent=2))
 
-            staged_systems.append(Resource(feature_id, stage_file, system_id))
-        return staged_systems
+            staged_features.append(Resource(feature_id, stage_file, system_id))
+        
+        logger.info(f"Staged features: {len(staged_features)}")
+        return staged_features
 
     def _resolve_first_observation(self, observations, default_value):
         if os.path.exists(observations):
@@ -227,16 +233,17 @@ class Stager:
 
         staged_datastreams = []
         for pgnr, daten in pegeldaten.items():
-            system_id = _resolve_id(self._resolve(STAGING_SYSTEM % pgnr))
-            stage_file = self._resolve(STAGING_DATASTREAM % pgnr)
-            datastream_id = _resolve_id(stage_file)
+            system_id = _unique_id(STAGING_SYSTEM % pgnr)
+            stage_filename = STAGING_DATASTREAM % pgnr
+            stage_file = self._absolute_file(stage_filename)
+            datastream_id = _unique_id(stage_filename)
 
             pegel = pgnr_to_pegelstamm[pgnr]
             pegelname = getattr(pegel, "pgname")
             gewaesser = getattr(pegel, "gewaesser")
             zeit = getattr(daten, "zeit").isoformat()
 
-            observations = self._resolve(STAGING_OBSERVATIONS % pgnr)
+            observations = self._absolute_file(STAGING_OBSERVATIONS % pgnr)
             first_observation = self._resolve_first_observation(observations, zeit)
 
             # http://media.hochwasserzentralen.de/lhp.dtd
@@ -310,6 +317,7 @@ class Stager:
                 datastream.write(json.dumps(stub, indent=2))
             staged_datastreams.append(Resource(datastream_id, stage_file, system_id))
 
+        logger.info(f"Staged datastreams: {len(staged_datastreams)}")
         return staged_datastreams
 
     def _append_to(self, csv_file, datastream_id, zeit, wert, einheit):
@@ -371,9 +379,9 @@ class Stager:
             einheit = getattr(daten, "einheit")
             zeit = getattr(daten, "zeit").isoformat()
 
-            datastream_id = _resolve_id(self._resolve(STAGING_DATASTREAM % pgnr))
-            observation_id = _resolve_id(self._resolve(STAGING_OBSERVATION % zeit))
-            csv_file = self._resolve(STAGING_OBSERVATIONS % pgnr)
+            datastream_id = _unique_id(STAGING_DATASTREAM % pgnr)
+            observation_id = _unique_id(STAGING_OBSERVATION % zeit)
+            csv_file = self._absolute_file(STAGING_OBSERVATIONS % pgnr)
             updated = self._append_to(csv_file, datastream_id, zeit, wert, einheit)
             if not updated:
                 logger.debug(
@@ -387,7 +395,7 @@ class Stager:
                     "result": wert
                 }
 
-                staged_file = self._resolve(STAGING_OBSERVATION % pgnr)
+                staged_file = self._absolute_file(STAGING_OBSERVATION % pgnr)
                 with open(staged_file, "w") as observation:
                     observation.write(json.dumps(stub, indent=2))
 

@@ -122,6 +122,7 @@ class Ingestor:
     def ingest_observations(self, observations: List[str]):
         for file in observations:
            with ObservationBuffer(file) as buffer:
+                logger.info(f"Start observation ingestion: {len(buffer)} ({file})")
                 self._ingest_files(
                     post_url=f"{self.csa_base_url}/datastreams/%s/observations",
                     # PUT observations is not supported yet
