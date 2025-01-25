@@ -88,6 +88,11 @@ class Ingestor:
                 logger.warning(f"  headers: {headers}")
                 logger.warning(f"  payload: {json_paylod}")
                 logger.warning(f"  response: {response.content.decode()}")
+            if response.status_code == 201:
+                # HACK for observations
+                # On success, we want to remove from buffer
+                if isinstance(resource, dict):
+                    resources.remove_from_buffer(_("row", resource))
             
 
     def ingest_systems(self, systems: List[Resource]):

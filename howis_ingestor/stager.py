@@ -62,7 +62,7 @@ class ObservationBuffer:
         # TODO release lock file
 
     def __iter__(self):
-        for row_values in self.buffer:
+        for _, row_values in enumerate(self.buffer):
             if row_values and not row_values[0].startswith("#"):
                 zeit = row_values[0]
                 wert = row_values[1]
@@ -78,7 +78,8 @@ class ObservationBuffer:
                         "datastream@id": datastream_id,
                         "resultTime": zeit,
                         "result": float(wert)
-                    }
+                    },
+                    "row": row_values
                 }
 
     def remove_from_buffer(self, row):
