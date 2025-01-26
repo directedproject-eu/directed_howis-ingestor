@@ -115,9 +115,18 @@ def main(
             staged_features = stager.stage_features(pegelstamm)
             staged_datastreams = stager.stage_datastreams(pegelstamm, pegeldaten)
             staged_observations = stager.stage_observations(pegeldaten)
-
+            
+            logger.info("#############################")
+            logger.info("#")
+            logger.info(f"Staged systems: {len(staged_systems)}")
+            logger.info(f"Staged features: {len(staged_features)}")
+            logger.info(f"Staged datastreams: {len(staged_datastreams)}")
+            logger.info(f"Observation buffers: {len(staged_observations)}")
+            logger.info("#")
+            logger.info("#############################")
+            
             ingestion_csa_base_url = internal_destination or external_csa_base_url
-            logger.info(f"Stage data before ingesting to '{ingestion_csa_base_url}' ...")
+            logger.info(f"Ingest to endpoint: '{ingestion_csa_base_url}'")
             if ingestion_csa_base_url and not dry_run:
                 ingestor = Ingestor(
                     stage_dir, ingestion_csa_base_url, csa_username, csa_password, override=override
@@ -130,7 +139,7 @@ def main(
                 if dry_run:
                     logger.warning("--dry-run is enabled.")
                 elif not destination:
-                    logger.warning("Destination is empty.")
+                    logger.warning("No ingestion destination URL provided!")
                 logger.warning("Skipping ingestion.")
 
         except Exception as e:
