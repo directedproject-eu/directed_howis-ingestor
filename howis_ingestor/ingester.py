@@ -71,17 +71,19 @@ class Ingestor:
                 endpoint_url = (
                     post_url % _("parent_id", resource) if _("parent_id", resource) else post_url
                 )
+                logger.debug(f"POST new resource {post_url}: {json_paylod}")
                 response = requests.post(
                     endpoint_url, headers=headers, json=json_paylod
                 )
             elif put_url:
                 # update entity
+                logger.debug(f"PUT on existing resource {put_url}: {json_paylod}")
                 response = requests.put(
                     put_url % _("id", resource), headers=headers, json=json_paylod
                 )
             else:
                 # skip update
-                logger.info(f"Skip PUTting resource: {put_url}.")
+                logger.debug(f"Skip PUTting resource: {put_url}.")
                 
             if response.status_code >= 400:
                 logger.warning("Failed to ingest:")
@@ -92,6 +94,7 @@ class Ingestor:
                 # HACK for observations
                 # On success, we want to remove from buffer
                 if isinstance(resource, dict):
+                    logger.debug(f"Remove successfully ingested resource from buffer")
                     resources.remove_from_buffer(_("row", resource))
             
 
@@ -121,7 +124,7 @@ class Ingestor:
 
     def ingest_observations(self, observations: List[str]):
         for file in observations:
-           with ObservationBuffer(file) as buffer:
+            with ObservationBuffer(file) as buffer:
                 logger.info(f"Start observation ingestion: {len(buffer)} ({file})")
                 self._ingest_files(
                     post_url=f"{self.csa_base_url}/datastreams/%s/observations",

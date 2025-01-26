@@ -54,7 +54,8 @@ class ObservationBuffer:
     def __exit__(self, type, value, traceback):
         with open(self.temp_file, 'w', newline='') as csv_file:
             writer = csv.writer(csv_file)
-            # write back rows still in buffer
+            # do not count the header row
+            logger.debug(f"Keep in buffer {len(self.buffer) - 1} not ingested rows.")
             writer.writerows(self.buffer)
         os.replace(self.temp_file, self.observations_csv)
 
@@ -63,6 +64,7 @@ class ObservationBuffer:
 
     def __iter__(self):
         for _, row_values in enumerate(self.buffer):
+            # skip the header row
             if row_values and not row_values[0].startswith("#"):
                 zeit = row_values[0]
                 wert = row_values[1]
@@ -83,7 +85,10 @@ class ObservationBuffer:
                 }
 
     def remove_from_buffer(self, row):
-        self.buffer.remove(row)
+        try:
+            self.buffer.remove(row)
+        except:
+            logger.debug(f"Row does not exist and cannot removed from buffer: {row}")
 
 class Stager:
     def __init__(self, stage_dir: str, csa_base_url: str):
