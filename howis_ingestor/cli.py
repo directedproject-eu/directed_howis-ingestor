@@ -100,12 +100,15 @@ def main(
     with FTP(ftp_url, encoding=encoding) as ftp:
         try:
             ftp.login(user=ftp_username, passwd=ftp_password)
-            ftp.dir()  # print remote dir content
+            #ftp.dir()  # print remote dir content
 
             kontakt = parser.parse_kontakt(ftp)
             pegelstamm = parser.parse_pegelstamm(ftp)
             pegeldaten = parser.parse_pegeldaten(ftp)
+        except Exception as ftp_error:
+            raise ftp_error
 
+        try:
             external_csa_base_url = (
                 destination.slice[-1] if destination.endswith("/") else destination
             ) if destination else "http://localhost:5000"  ## TODO csa impl currently expects system link

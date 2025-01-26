@@ -71,19 +71,18 @@ class Ingestor:
                 endpoint_url = (
                     post_url % _("parent_id", resource) if _("parent_id", resource) else post_url
                 )
-                logger.debug(f"POST new resource {post_url}: {json_paylod}")
+                logger.debug(f"POST new resource {endpoint_url}: {json_paylod}")
                 response = requests.post(
                     endpoint_url, headers=headers, json=json_paylod
                 )
             elif put_url:
                 # update entity
-                logger.debug(f"PUT on existing resource {put_url}: {json_paylod}")
-                response = requests.put(
-                    put_url % _("id", resource), headers=headers, json=json_paylod
-                )
+                endpoint_url = put_url % _("id", resource)
+                logger.debug(f"PUT on existing resource {endpoint_url}: {json_paylod}")
+                response = requests.put(endpoint_url, headers=headers, json=json_paylod)
             else:
                 # skip update
-                logger.debug(f"Skip PUTting resource: {put_url}.")
+                logger.debug(f"Skip PUTting resource.")
                 
             if response.status_code >= 400:
                 logger.warning("Failed to ingest:")
