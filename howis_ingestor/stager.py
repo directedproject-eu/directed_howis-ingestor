@@ -404,5 +404,5 @@ class Stager:
                 with open(staged_file, "w") as observation:
                     observation.write(json.dumps(stub, indent=2))
 
-        staged_observations.append(csv_file)
+            staged_observations.append(csv_file)
         return staged_observations
