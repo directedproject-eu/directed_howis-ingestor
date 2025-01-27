@@ -24,7 +24,6 @@ UUID_NAMESPACE = uuid.UUID("{f964a9cf-b4d1-3de7-8f59-d6b885a7fb56}")
 
 def _unique_id(discriminator: str):
     """Resolves reproducable unique ID based on the given input."""
-    # create a non-random uuid from namepace and file
     return str(uuid.uuid3(namespace=UUID_NAMESPACE, name=discriminator))
 
 class Resource:
@@ -248,6 +247,7 @@ class Stager:
             gewaesser = getattr(pegel, "gewaesser")
             zeit = getattr(daten, "zeit").isoformat()
 
+            ## FIXME first observtion cannot be read from observation buffer 
             observations = self._absolute_file(STAGING_OBSERVATIONS % pgnr)
             first_observation = self._resolve_first_observation(observations, zeit)
 
@@ -385,19 +385,18 @@ class Stager:
             zeit = getattr(daten, "zeit").isoformat()
 
             datastream_id = _unique_id(STAGING_DATASTREAM % pgnr)
-            observation_id = _unique_id(STAGING_OBSERVATION % zeit)
             csv_file = self._absolute_file(STAGING_OBSERVATIONS % pgnr)
             updated = self._append_to(csv_file, datastream_id, zeit, wert, einheit)
             if not updated:
-                logger.debug(
+                logger.info(
                     f"Skip observation for datastream {datastream_id} with existing time at {zeit}"
                 )
             else:
                 stub = {
-                    "id": observation_id,
+                    "id": _unique_id(f"{datastream_id}_{zeit}"),
                     "datastream@id": datastream_id,
                     "resultTime": zeit,
-                    "result": wert
+                    "result": float(wert)
                 }
 
                 staged_file = self._absolute_file(STAGING_OBSERVATION % pgnr)
