@@ -1,4 +1,8 @@
-# Overview
+# 🚧 ARCHIVED 🚧
+
+This repository was archived on 20.01.2026 and receives no maintenance.
+
+## Overview
 
 A simple data ingestor reading LHP data for OGC API for Connected Systems.
 At this time, ingestions is optimized for HOWIS (Erftverband) data.
